@@ -61,6 +61,24 @@ function tryJsonLd($: cheerio.CheerioAPI): {
   return out;
 }
 
+function tryEmail($: cheerio.CheerioAPI): { authorEmail?: string } {
+  const bylineSelectors = [".byline", ".author", '[rel="author"]', "[itemprop=author]"];
+  for (const sel of bylineSelectors) {
+    const node = $(sel).first();
+    if (!node.length) continue;
+    const mailto = node
+      .find('a[href^="mailto:"]')
+      .attr("href")
+      ?.replace(/^mailto:/, "")
+      .split("?")[0];
+    if (mailto && !isGenericMailbox(mailto)) return { authorEmail: mailto };
+    const text = node.text();
+    const m = text.match(/[\w.+-]+@[\w-]+\.[\w.-]+/);
+    if (m && !isGenericMailbox(m[0])) return { authorEmail: m[0] };
+  }
+  return {};
+}
+
 function tryCss($: cheerio.CheerioAPI): { author?: string } {
   const selectors = [
     '[rel="author"]',
@@ -70,7 +88,11 @@ function tryCss($: cheerio.CheerioAPI): { author?: string } {
     "[itemprop=author]",
   ];
   for (const sel of selectors) {
-    const text = $(sel).first().text().trim();
+    const node = $(sel).first();
+    if (!node.length) continue;
+    const clone = node.clone();
+    clone.find('a[href^="mailto:"]').remove();
+    const text = clone.text().trim();
     if (text) {
       return { author: text.replace(/^by\s+/i, "").trim() };
     }
@@ -116,6 +138,11 @@ export function extractAuthorFromHtml(
   if (!result.author) {
     const css = tryCss($);
     if (css.author) result.author = css.author;
+  }
+
+  if (!result.authorEmail) {
+    const email = tryEmail($);
+    if (email.authorEmail) result.authorEmail = email.authorEmail;
   }
 
   return result;

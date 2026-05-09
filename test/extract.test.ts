@@ -50,3 +50,22 @@ describe("extractAuthorFromHtml — CSS fallback", () => {
     expect(r.authorEmail).toBeUndefined();
   });
 });
+
+describe("extractAuthorFromHtml — email", () => {
+  it("extracts mailto: from byline-adjacent link", () => {
+    const r = extractAuthorFromHtml(
+      fx("article-with-mailto.html"),
+      "https://example.com/mailto",
+    );
+    expect(r.author).toBe("Margaret Hamilton");
+    expect(r.authorEmail).toBe("margaret@example.com");
+  });
+
+  it("ignores generic mailboxes (editor@, info@, etc.)", () => {
+    const r = extractAuthorFromHtml(
+      fx("article-with-generic-mailbox.html"),
+      "https://example.com/generic",
+    );
+    expect(r.authorEmail).toBeUndefined();
+  });
+});
