@@ -31,3 +31,22 @@ describe("extractAuthorFromHtml — meta tags", () => {
     expect(r.publishedAt).toBe("2026-03-15T08:00:00Z");
   });
 });
+
+describe("extractAuthorFromHtml — CSS fallback", () => {
+  it("extracts from .byline element, stripping leading 'By '", () => {
+    const r = extractAuthorFromHtml(
+      fx("article-css-byline.html"),
+      "https://example.com/css",
+    );
+    expect(r.author).toBe("Linus Torvalds");
+  });
+
+  it("returns empty author when no signal is present", () => {
+    const r = extractAuthorFromHtml(
+      fx("article-no-author.html"),
+      "https://example.com/none",
+    );
+    expect(r.author).toBe("");
+    expect(r.authorEmail).toBeUndefined();
+  });
+});

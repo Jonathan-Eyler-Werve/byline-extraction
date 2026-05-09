@@ -61,6 +61,23 @@ function tryJsonLd($: cheerio.CheerioAPI): {
   return out;
 }
 
+function tryCss($: cheerio.CheerioAPI): { author?: string } {
+  const selectors = [
+    '[rel="author"]',
+    ".byline",
+    ".author",
+    ".article-author",
+    "[itemprop=author]",
+  ];
+  for (const sel of selectors) {
+    const text = $(sel).first().text().trim();
+    if (text) {
+      return { author: text.replace(/^by\s+/i, "").trim() };
+    }
+  }
+  return {};
+}
+
 function tryMeta($: cheerio.CheerioAPI): {
   author?: string;
   title?: string;
@@ -95,6 +112,11 @@ export function extractAuthorFromHtml(
   if (!result.author && meta.author) result.author = meta.author;
   if (!result.title && meta.title) result.title = meta.title;
   if (!result.publishedAt && meta.publishedAt) result.publishedAt = meta.publishedAt;
+
+  if (!result.author) {
+    const css = tryCss($);
+    if (css.author) result.author = css.author;
+  }
 
   return result;
 }
