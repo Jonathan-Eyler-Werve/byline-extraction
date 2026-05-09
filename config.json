@@ -1,0 +1,9 @@
+{
+  "feeds": [
+    {
+      "pageUrl": "https://example.org/news",
+      "linkSelector": "a.article-link",
+      "linkPattern": "^https://[^/]+/(20\\d\\d|articles)/"
+    }
+  ]
+}
