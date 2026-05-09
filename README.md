@@ -22,6 +22,16 @@ Or in dev:
 npx tsx src/cli.ts run
 ```
 
+### Dry run
+
+To iterate on `linkSelector` / `linkPattern` without setting up Sheets credentials, pass `--dry-run`:
+
+```bash
+npx tsx src/cli.ts run --dry-run
+```
+
+This skips both reading and writing the sheet (so all matched links count as "new"), and prints the rows that *would* have been appended. No `GOOGLE_*` env vars required.
+
 ## Sheet schema
 
 | author | author_email | source_url | page_url | title | published_at | extracted_at | error |

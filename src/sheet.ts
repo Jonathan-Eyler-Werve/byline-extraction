@@ -32,6 +32,15 @@ function rowFor(r: ExtractionResult): string[] {
   ];
 }
 
+export function makeDryRunSheetClient(
+  onAppend: (rows: ExtractionResult[]) => void = () => {},
+): SheetClient {
+  return {
+    readSeenSourceUrls: async () => new Set<string>(),
+    appendRows: async (rows) => { onAppend(rows); },
+  };
+}
+
 export async function makeSheetClient(opts: {
   spreadsheetId: string;
   tab: string;

@@ -1,9 +1,8 @@
 {
   "feeds": [
     {
-      "pageUrl": "https://example.org/news",
-      "linkSelector": "a.article-link",
-      "linkPattern": "^https://[^/]+/(20\\d\\d|articles)/"
+      "pageUrl": "https://en.wikipedia.org/wiki/Glossary_of_surfing",
+      "linkSelector": ".citation a.external"
     }
   ]
 }
