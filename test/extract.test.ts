@@ -19,3 +19,15 @@ describe("extractAuthorFromHtml — JSON-LD", () => {
     expect(r.sourceUrl).toBe("https://example.com/jsonld");
   });
 });
+
+describe("extractAuthorFromHtml — meta tags", () => {
+  it("falls back to <meta name=author> when no JSON-LD", () => {
+    const r = extractAuthorFromHtml(
+      fx("article-meta.html"),
+      "https://example.com/meta",
+    );
+    expect(r.author).toBe("Grace Hopper");
+    expect(r.title).toBe("Meta Article");
+    expect(r.publishedAt).toBe("2026-03-15T08:00:00Z");
+  });
+});

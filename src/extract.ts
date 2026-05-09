@@ -61,6 +61,23 @@ function tryJsonLd($: cheerio.CheerioAPI): {
   return out;
 }
 
+function tryMeta($: cheerio.CheerioAPI): {
+  author?: string;
+  title?: string;
+  publishedAt?: string;
+} {
+  const out: ReturnType<typeof tryMeta> = {};
+  const metaAuthor =
+    $('meta[name="author"]').attr("content") ??
+    $('meta[property="article:author"]').attr("content");
+  if (metaAuthor && metaAuthor.trim()) out.author = metaAuthor.trim();
+  const title = $("title").first().text().trim();
+  if (title) out.title = title;
+  const published = $('meta[property="article:published_time"]').attr("content");
+  if (published) out.publishedAt = published;
+  return out;
+}
+
 export function extractAuthorFromHtml(
   html: string,
   sourceUrl: string,
@@ -73,6 +90,11 @@ export function extractAuthorFromHtml(
   if (jsonLd.authorEmail) result.authorEmail = jsonLd.authorEmail;
   if (jsonLd.title) result.title = jsonLd.title;
   if (jsonLd.publishedAt) result.publishedAt = jsonLd.publishedAt;
+
+  const meta = tryMeta($);
+  if (!result.author && meta.author) result.author = meta.author;
+  if (!result.title && meta.title) result.title = meta.title;
+  if (!result.publishedAt && meta.publishedAt) result.publishedAt = meta.publishedAt;
 
   return result;
 }
