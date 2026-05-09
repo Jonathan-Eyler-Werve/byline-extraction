@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import { join } from "path";
-import { extractAuthorFromHtml } from "../src/extract.js";
+import { extractAuthorFromHtml, extractAuthor } from "../src/extract.js";
 
 const fx = (name: string) =>
   readFileSync(join(__dirname, "fixtures", name), "utf8");
@@ -67,5 +67,21 @@ describe("extractAuthorFromHtml — email", () => {
       "https://example.com/generic",
     );
     expect(r.authorEmail).toBeUndefined();
+  });
+});
+
+describe("extractAuthor (fetch wrapper)", () => {
+  it("uses injected fetch and parses HTML", async () => {
+    const html = fx("article-jsonld.html");
+    const fakeFetch = async () => new Response(html, { status: 200 });
+    const r = await extractAuthor("https://example.com/jsonld", fakeFetch as typeof fetch);
+    expect(r.author).toBe("Ada Lovelace");
+  });
+
+  it("throws on non-2xx", async () => {
+    const fakeFetch = async () => new Response("nope", { status: 500 });
+    await expect(
+      extractAuthor("https://example.com/x", fakeFetch as typeof fetch),
+    ).rejects.toThrow(/500/);
   });
 });

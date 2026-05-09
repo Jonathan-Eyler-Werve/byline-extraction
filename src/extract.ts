@@ -147,3 +147,17 @@ export function extractAuthorFromHtml(
 
   return result;
 }
+
+export async function extractAuthor(
+  sourceUrl: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<PartialResult> {
+  const res = await fetchImpl(sourceUrl, {
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!res.ok) {
+    throw new Error(`fetch ${sourceUrl} failed: ${res.status}`);
+  }
+  const html = await res.text();
+  return extractAuthorFromHtml(html, sourceUrl);
+}
