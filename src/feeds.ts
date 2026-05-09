@@ -24,3 +24,17 @@ export function extractLinksFromHtml(
   });
   return [...out];
 }
+
+export async function findLinks(
+  feed: FeedConfig,
+  fetchImpl: typeof fetch = fetch,
+): Promise<string[]> {
+  const res = await fetchImpl(feed.pageUrl, {
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!res.ok) {
+    throw new Error(`fetch ${feed.pageUrl} failed: ${res.status}`);
+  }
+  const html = await res.text();
+  return extractLinksFromHtml(html, feed.pageUrl, feed);
+}

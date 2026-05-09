@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import { join } from "path";
-import { extractLinksFromHtml } from "../src/feeds.js";
+import { extractLinksFromHtml, findLinks } from "../src/feeds.js";
 
 const fx = (name: string) =>
   readFileSync(join(__dirname, "fixtures", name), "utf8");
@@ -41,5 +41,27 @@ describe("extractLinksFromHtml", () => {
       linkSelector: "a.x",
     });
     expect(links).toEqual(["https://example.com/a"]);
+  });
+});
+
+describe("findLinks", () => {
+  it("uses injected fetch and parses returned HTML", async () => {
+    const fakeFetch = async () =>
+      new Response(`<a class="x" href="/a">A</a>`, { status: 200 });
+    const links = await findLinks(
+      { pageUrl: "https://example.com", linkSelector: "a.x" },
+      fakeFetch as typeof fetch,
+    );
+    expect(links).toEqual(["https://example.com/a"]);
+  });
+
+  it("throws on non-2xx", async () => {
+    const fakeFetch = async () => new Response("nope", { status: 500 });
+    await expect(
+      findLinks(
+        { pageUrl: "https://example.com", linkSelector: "a" },
+        fakeFetch as typeof fetch,
+      ),
+    ).rejects.toThrow(/500/);
   });
 });
