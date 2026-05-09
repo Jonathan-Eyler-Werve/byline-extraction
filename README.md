@@ -1,13 +1,19 @@
 # byline-extraction
 
-Scrapes configured Organization pages for outbound article links, extracts the author (and email when published) from each new article, and appends rows to a Google Sheet.
+Scrapes configured Organization pages for outbound article links, extracts the author (and email when published) from each new article, and appends rows to a Google Sheet via a tiny Apps Script webhook.
 
 ## Setup
 
 1. `npm install`
-2. Copy `.env.example` to `.env` and fill in `GOOGLE_SHEET_ID`, `GOOGLE_SHEET_TAB`, and `GOOGLE_APPLICATION_CREDENTIALS` (path to a service-account JSON key).
-3. Share the target sheet with the service-account email (Editor access).
-4. Edit `config.json` to list the Organization pages to watch and the link selector/pattern for each.
+2. Open your target Google Sheet → **Extensions → Apps Script** → replace the default `Code.gs` with the contents of `apps-script/Code.gs` in this repo → **Save**.
+3. **Deploy → New deployment → Web app**:
+   - **Execute as:** Me
+   - **Who has access:** Anyone with the link (or "Anyone within `<your-domain>`" if available and you want it scoped)
+   - Copy the deployment URL.
+4. Copy `.env.example` → `.env` and paste the URL into `WEBHOOK_URL`.
+5. Edit `config.json` to list the Organization pages to watch and the link selector/pattern for each.
+
+No GCP project, service account, or `googleapis` library required — the Apps Script runs as you (the sheet owner) and the URL is the only secret.
 
 ## Run
 

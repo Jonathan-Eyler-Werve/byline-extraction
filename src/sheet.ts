@@ -1,36 +1,9 @@
-import { google, sheets_v4 } from "googleapis";
 import type { ExtractionResult } from "./types.js";
-
-const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
 
 export type SheetClient = {
   readSeenSourceUrls(): Promise<Set<string>>;
   appendRows(rows: ExtractionResult[]): Promise<void>;
 };
-
-const COLUMNS = [
-  "author",
-  "author_email",
-  "source_url",
-  "page_url",
-  "title",
-  "published_at",
-  "extracted_at",
-  "error",
-] as const;
-
-function rowFor(r: ExtractionResult): string[] {
-  return [
-    r.author,
-    r.authorEmail ?? "",
-    r.sourceUrl,
-    r.pageUrl,
-    r.title ?? "",
-    r.publishedAt ?? "",
-    new Date().toISOString(),
-    r.error ?? "",
-  ];
-}
 
 export function makeDryRunSheetClient(
   onAppend: (rows: ExtractionResult[]) => void = () => {},
@@ -41,67 +14,48 @@ export function makeDryRunSheetClient(
   };
 }
 
-export async function makeSheetClient(opts: {
-  spreadsheetId: string;
-  tab: string;
-}): Promise<SheetClient> {
-  const auth = new google.auth.GoogleAuth({ scopes: SCOPES });
-  const sheets = google.sheets({ version: "v4", auth });
-  await ensureHeaderRow(sheets, opts);
-  return {
-    readSeenSourceUrls: () => readSeenSourceUrls(sheets, opts),
-    appendRows: (rows) => appendRows(sheets, opts, rows),
+type WebhookResponse = {
+  urls?: string[];
+  appended?: number;
+  error?: string;
+};
+
+export function makeWebhookSheetClient(opts: {
+  webhookUrl: string;
+  fetchImpl?: typeof fetch;
+}): SheetClient {
+  const fetchImpl = opts.fetchImpl ?? fetch;
+
+  const parse = async (res: Response, label: string): Promise<WebhookResponse> => {
+    if (!res.ok) {
+      throw new Error(`webhook ${label} failed: ${res.status}`);
+    }
+    const data = (await res.json()) as WebhookResponse;
+    if (data.error) {
+      throw new Error(`webhook ${label} error: ${data.error}`);
+    }
+    return data;
   };
-}
 
-async function ensureHeaderRow(
-  sheets: sheets_v4.Sheets,
-  opts: { spreadsheetId: string; tab: string },
-) {
-  const range = `${opts.tab}!A1:H1`;
-  const res = await sheets.spreadsheets.values.get({
-    spreadsheetId: opts.spreadsheetId,
-    range,
-  });
-  const existing = res.data.values?.[0];
-  if (!existing || existing.length === 0) {
-    await sheets.spreadsheets.values.update({
-      spreadsheetId: opts.spreadsheetId,
-      range,
-      valueInputOption: "RAW",
-      requestBody: { values: [Array.from(COLUMNS)] },
-    });
-  }
-}
+  return {
+    readSeenSourceUrls: async () => {
+      const url = `${opts.webhookUrl}?op=seen`;
+      const res = await fetchImpl(url, {
+        signal: AbortSignal.timeout(30_000),
+      });
+      const data = await parse(res, "seen");
+      return new Set(data.urls ?? []);
+    },
 
-async function readSeenSourceUrls(
-  sheets: sheets_v4.Sheets,
-  opts: { spreadsheetId: string; tab: string },
-): Promise<Set<string>> {
-  // source_url is column C (3rd)
-  const res = await sheets.spreadsheets.values.get({
-    spreadsheetId: opts.spreadsheetId,
-    range: `${opts.tab}!C2:C`,
-  });
-  const values = res.data.values ?? [];
-  return new Set(
-    values
-      .map((row) => row[0])
-      .filter((v): v is string => typeof v === "string" && v.length > 0),
-  );
-}
-
-async function appendRows(
-  sheets: sheets_v4.Sheets,
-  opts: { spreadsheetId: string; tab: string },
-  rows: ExtractionResult[],
-): Promise<void> {
-  if (rows.length === 0) return;
-  await sheets.spreadsheets.values.append({
-    spreadsheetId: opts.spreadsheetId,
-    range: `${opts.tab}!A:H`,
-    valueInputOption: "RAW",
-    insertDataOption: "INSERT_ROWS",
-    requestBody: { values: rows.map(rowFor) },
-  });
+    appendRows: async (rows) => {
+      if (rows.length === 0) return;
+      const res = await fetchImpl(opts.webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ op: "append", rows }),
+        signal: AbortSignal.timeout(60_000),
+      });
+      await parse(res, "append");
+    },
+  };
 }

@@ -16,8 +16,7 @@
   "dependencies": {
     "cheerio": "^1.0.0",
     "commander": "^12.1.0",
-    "dotenv": "^16.4.5",
-    "googleapis": "^144.0.0"
+    "dotenv": "^16.4.5"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

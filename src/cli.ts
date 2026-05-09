@@ -2,13 +2,13 @@
 import "dotenv/config";
 import { Command } from "commander";
 import { loadConfig } from "./config.js";
-import { makeSheetClient, makeDryRunSheetClient, type SheetClient } from "./sheet.js";
+import { makeWebhookSheetClient, makeDryRunSheetClient, type SheetClient } from "./sheet.js";
 import { run } from "./run.js";
 
 const program = new Command();
 program
   .name("byline")
-  .description("Scrape configured pages, extract bylines, append to a Google Sheet.");
+  .description("Scrape configured pages, extract bylines, append to a Google Sheet via an Apps Script webhook.");
 
 program
   .command("run")
@@ -16,7 +16,7 @@ program
   .option("-c, --config <path>", "path to config.json", "./config.json")
   .option(
     "--dry-run",
-    "Don't read or write the sheet; print what would be appended. No Google credentials required.",
+    "Don't read or write the sheet; print what would be appended. No webhook required.",
   )
   .action(async (opts: { config: string; dryRun?: boolean }) => {
     const config = loadConfig(opts.config);
@@ -27,13 +27,12 @@ program
         console.log(JSON.stringify(rows, null, 2));
       });
     } else {
-      const spreadsheetId = process.env.GOOGLE_SHEET_ID;
-      const tab = process.env.GOOGLE_SHEET_TAB ?? "Sheet1";
-      if (!spreadsheetId) {
-        console.error("GOOGLE_SHEET_ID is required (or pass --dry-run)");
+      const webhookUrl = process.env.WEBHOOK_URL;
+      if (!webhookUrl) {
+        console.error("WEBHOOK_URL is required (or pass --dry-run). See apps-script/Code.gs for the webhook to deploy.");
         process.exit(2);
       }
-      sheet = await makeSheetClient({ spreadsheetId, tab });
+      sheet = makeWebhookSheetClient({ webhookUrl });
     }
     const summary = await run({ config, sheet });
     console.log(JSON.stringify(summary, null, 2));
