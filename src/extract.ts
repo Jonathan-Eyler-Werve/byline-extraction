@@ -25,6 +25,7 @@ const GENERIC_AUTHOR_NAMES = new Set([
   "contributor",
   "guest author",
   "all rights reserved",
+  "privacy policy",
 ]);
 
 function isGenericAuthorName(name: unknown): boolean {
