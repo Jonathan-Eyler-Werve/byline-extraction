@@ -130,6 +130,83 @@ describe("run", () => {
     expect(events.find((e) => e.type === "persist-done")).toMatchObject({ rowCount: 2 });
   });
 
+  it("persists after each feed instead of once at the end", async () => {
+    const config = {
+      feeds: [
+        { pageUrl: "https://org.example/a", linkSelector: "a.x" },
+        { pageUrl: "https://org.example/b", linkSelector: "a.x" },
+      ],
+    };
+    const appendCalls: number[] = [];
+    const sheet: SheetClient = {
+      readSeenSourceUrls: async () => new Set<string>(),
+      appendRows: async (rows) => { appendCalls.push(rows.length); },
+    };
+    const fakeFetch = async (url: string | URL | Request) => {
+      const u = url.toString();
+      if (u === "https://org.example/a") {
+        return new Response(`<a class="x" href="https://x.com/1">1</a>`, { status: 200 });
+      }
+      if (u === "https://org.example/b") {
+        return new Response(
+          `<a class="x" href="https://x.com/2">2</a><a class="x" href="https://x.com/3">3</a>`,
+          { status: 200 },
+        );
+      }
+      return new Response(`<html><head><meta name="author" content="A"></head></html>`, { status: 200 });
+    };
+    const events: ProgressEvent[] = [];
+    await run({
+      config,
+      sheet,
+      fetchImpl: fakeFetch as typeof fetch,
+      onProgress: (e) => events.push(e),
+    });
+    // Two separate appendRows calls, one per feed, with the right sizes
+    expect(appendCalls).toEqual([1, 2]);
+    // persist events interleave with feed events
+    const types = events.map((e) => e.type);
+    expect(types).toEqual([
+      "sheet-read-start",
+      "sheet-read-done",
+      "feed-start",
+      "feed-links",
+      "extract-result",
+      "persist-start",
+      "persist-done",
+      "feed-start",
+      "feed-links",
+      "extract-result",
+      "extract-result",
+      "persist-start",
+      "persist-done",
+    ]);
+  });
+
+  it("skips the persist call entirely when a feed produces no rows", async () => {
+    const config = {
+      feeds: [{ pageUrl: "https://org.example/a", linkSelector: "a.x" }],
+    };
+    let appendCalled = false;
+    const sheet: SheetClient = {
+      readSeenSourceUrls: async () => new Set<string>(["https://x.com/already"]),
+      appendRows: async () => { appendCalled = true; },
+    };
+    const fakeFetch = async () =>
+      new Response(`<a class="x" href="https://x.com/already">A</a>`, { status: 200 });
+    const events: ProgressEvent[] = [];
+    await run({
+      config,
+      sheet,
+      fetchImpl: fakeFetch as typeof fetch,
+      onProgress: (e) => events.push(e),
+    });
+    expect(appendCalled).toBe(false);
+    const types = events.map((e) => e.type);
+    expect(types).not.toContain("persist-start");
+    expect(types).not.toContain("persist-done");
+  });
+
   it("emits feed-error and skips feed-links when feed fetch fails", async () => {
     const config = {
       feeds: [{ pageUrl: "https://org.example/news", linkSelector: "a.x" }],

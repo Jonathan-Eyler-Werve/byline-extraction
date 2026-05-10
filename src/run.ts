@@ -49,7 +49,6 @@ export async function run(opts: RunOptions): Promise<RunSummary> {
     successes: 0,
     failures: 0,
   };
-  const rows: ExtractionResult[] = [];
   const totalFeeds = opts.config.feeds.length;
 
   for (let feedIdx = 0; feedIdx < totalFeeds; feedIdx++) {
@@ -82,12 +81,13 @@ export async function run(opts: RunOptions): Promise<RunSummary> {
       newCount: newSourceUrls.length,
     });
 
+    const feedRows: ExtractionResult[] = [];
     for (let i = 0; i < newSourceUrls.length; i++) {
       const sourceUrl = newSourceUrls[i];
       try {
         const partial = await extractAuthor(sourceUrl, fetchImpl);
         const result: ExtractionResult = { ...partial, pageUrl: feed.pageUrl };
-        rows.push(result);
+        feedRows.push(result);
         summary.successes += 1;
         emit({
           type: "extract-result",
@@ -99,7 +99,7 @@ export async function run(opts: RunOptions): Promise<RunSummary> {
         });
       } catch (err) {
         const error = (err as Error).message;
-        rows.push({
+        feedRows.push({
           sourceUrl,
           author: "",
           pageUrl: feed.pageUrl,
@@ -117,11 +117,13 @@ export async function run(opts: RunOptions): Promise<RunSummary> {
       }
       seen.add(sourceUrl);
     }
-  }
 
-  emit({ type: "persist-start", rowCount: rows.length });
-  await opts.sheet.appendRows(rows);
-  emit({ type: "persist-done", rowCount: rows.length });
+    if (feedRows.length > 0) {
+      emit({ type: "persist-start", rowCount: feedRows.length });
+      await opts.sheet.appendRows(feedRows);
+      emit({ type: "persist-done", rowCount: feedRows.length });
+    }
+  }
 
   return summary;
 }
