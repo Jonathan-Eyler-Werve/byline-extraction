@@ -1,8 +1,8 @@
 {
   "feeds": [
     {
-      "pageUrl": "https://en.wikipedia.org/wiki/Glossary_of_surfing",
-      "linkSelector": ".citation a.external"
+      "pageUrl": "https://unbreaking.org/issues/immigration/",
+      "linkSelector": ".table-timeline a"
     }
   ]
 }

@@ -3,7 +3,7 @@ import "dotenv/config";
 import { Command } from "commander";
 import { loadConfig } from "./config.js";
 import { makeWebhookSheetClient, makeDryRunSheetClient, type SheetClient } from "./sheet.js";
-import { run } from "./run.js";
+import { run, type ProgressEvent } from "./run.js";
 
 const program = new Command();
 program
@@ -18,13 +18,16 @@ program
     "--dry-run",
     "Don't read or write the sheet; print what would be appended. No webhook required.",
   )
-  .action(async (opts: { config: string; dryRun?: boolean }) => {
+  .option("-q, --quiet", "Suppress progress output; only print the JSON summary on stdout.")
+  .action(async (opts: { config: string; dryRun?: boolean; quiet?: boolean }) => {
     const config = loadConfig(opts.config);
     let sheet: SheetClient;
     if (opts.dryRun) {
       sheet = makeDryRunSheetClient((rows) => {
-        console.log(`[dry-run] would append ${rows.length} row(s):`);
-        console.log(JSON.stringify(rows, null, 2));
+        if (!opts.quiet) {
+          process.stderr.write(`[dry-run] would append ${rows.length} row(s):\n`);
+          process.stderr.write(JSON.stringify(rows, null, 2) + "\n");
+        }
       });
     } else {
       const webhookUrl = process.env.WEBHOOK_URL;
@@ -34,10 +37,71 @@ program
       }
       sheet = makeWebhookSheetClient({ webhookUrl });
     }
-    const summary = await run({ config, sheet });
+
+    if (!opts.quiet) {
+      process.stderr.write(`byline-extraction fetches author name and email from outbound links.\n\n`);
+      const n = config.feeds.length;
+      process.stderr.write(`Config: ${n} feed${n === 1 ? "" : "s"}\n`);
+      for (const f of config.feeds) {
+        process.stderr.write(`  • ${f.pageUrl}\n`);
+      }
+      process.stderr.write(`\n`);
+    }
+
+    const onProgress = opts.quiet ? undefined : renderEvent;
+    const summary = await run({ config, sheet, onProgress });
     console.log(JSON.stringify(summary, null, 2));
     if (summary.failures > 0) process.exitCode = 1;
   });
+
+function hostOf(url: string): string {
+  try {
+    return new URL(url).host;
+  } catch {
+    return url;
+  }
+}
+
+const useColor = process.stderr.isTTY && !process.env.NO_COLOR;
+const green = (s: string) => (useColor ? `\x1b[32m${s}\x1b[0m` : s);
+const red = (s: string) => (useColor ? `\x1b[31m${s}\x1b[0m` : s);
+
+function renderEvent(e: ProgressEvent): void {
+  switch (e.type) {
+    case "sheet-read-start":
+      process.stderr.write(`Reading seen URLs from sheet... `);
+      break;
+    case "sheet-read-done":
+      process.stderr.write(`${e.count} known\n`);
+      break;
+    case "feed-start":
+      process.stderr.write(`\nFeed ${e.index}/${e.total}: ${e.pageUrl}\n`);
+      break;
+    case "feed-links":
+      process.stderr.write(`Found ${e.found} links, ${e.newCount} new.\nThis feed will take ~${Math.ceil(e.newCount / 3)} seconds.\n\n`);
+      break;
+    case "feed-error":
+      process.stderr.write(`  Feed error: ${e.error}\n`);
+      break;
+    case "extract-result":
+      if (e.ok) {
+        process.stderr.write(`  [${e.index}/${e.total}] ${green("✓")} ${hostOf(e.sourceUrl)}\n`);
+      } else {
+        const reason =
+          e.error?.replace(`fetch ${e.sourceUrl} failed: `, "").trim() ||
+          e.error ||
+          "unknown";
+        process.stderr.write(`  [${e.index}/${e.total}] ${red("✗")} ${hostOf(e.sourceUrl)} — ${reason}\n`);
+      }
+      break;
+    case "persist-start":
+      process.stderr.write(`\nExtracted ${e.rowCount} row${e.rowCount === 1 ? "" : "s"}; persisting to sheet...\n`);
+      break;
+    case "persist-done":
+      process.stderr.write(`Persisted: ${e.rowCount} row${e.rowCount === 1 ? "" : "s"} appended.\n\n`);
+      break;
+  }
+}
 
 program.parseAsync().catch((err) => {
   console.error(err);
