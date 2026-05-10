@@ -46,6 +46,24 @@ describe("extractAuthorFromHtml — generic-name fallthrough", () => {
   });
 });
 
+describe("extractAuthorFromHtml — copyright fallback", () => {
+  it("extracts a personal name from a copyright line when no other signal exists", () => {
+    const r = extractAuthorFromHtml(
+      fx("article-copyright-only.html"),
+      "https://example.com/copyright",
+    );
+    expect(r.author).toBe("John Baker");
+  });
+
+  it("ignores corporate copyright lines (Inc, Incorporated, Group, etc.)", () => {
+    const r = extractAuthorFromHtml(
+      fx("article-copyright-corporate.html"),
+      "https://example.com/corp",
+    );
+    expect(r.author).toBe("");
+  });
+});
+
 describe("extractAuthorFromHtml — meta tags", () => {
   it("falls back to <meta name=author> when no JSON-LD", () => {
     const r = extractAuthorFromHtml(

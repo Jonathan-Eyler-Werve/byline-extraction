@@ -84,6 +84,30 @@ function tryJsonLd($: cheerio.CheerioAPI): {
   return out;
 }
 
+const CORPORATE_MARKERS_RE =
+  /\b(?:inc|incorporated|ltd|llc|corp|corporation|company|co\.|group|media|network|publishing|press|news|magazine|newspaper|gmbh|holdings|enterprises|services|productions|studios)\b/i;
+
+function isCorporateName(s: string): boolean {
+  return CORPORATE_MARKERS_RE.test(s);
+}
+
+function tryCopyrightLine($: cheerio.CheerioAPI): { author?: string } {
+  const root = $.root().clone();
+  root.find("script, style, noscript").remove();
+  const text = root.text();
+  const re =
+    /(?:copyright|©|\(c\))[\s,©]*\d{4}(?:\s*[-–—]\s*\d{4})?[\s,]+(?:by\s+)?([^./<\n;|]+?)(?:\s*\/|\.|<|\n|;|\||$)/gi;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(text)) !== null) {
+    const candidate = match[1].trim().replace(/\s+/g, " ");
+    if (!candidate) continue;
+    if (isGenericAuthorName(candidate)) continue;
+    if (isCorporateName(candidate)) continue;
+    return { author: candidate };
+  }
+  return {};
+}
+
 function tryEmail($: cheerio.CheerioAPI): { authorEmail?: string } {
   const bylineSelectors = [".byline", ".author", '[rel="author"]', "[itemprop=author]"];
   for (const sel of bylineSelectors) {
@@ -175,6 +199,11 @@ export function extractAuthorFromHtml(
   if (!result.author) {
     const css = tryCss($);
     if (css.author) result.author = css.author;
+  }
+
+  if (!result.author) {
+    const copyright = tryCopyrightLine($);
+    if (copyright.author) result.author = copyright.author;
   }
 
   if (!result.authorEmail) {
