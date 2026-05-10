@@ -9,16 +9,19 @@ export function extractLinksFromHtml(
   const $ = cheerio.load(html);
   const selector = feed.linkSelector ?? "a[href]";
   const pattern = feed.linkPattern ? new RegExp(feed.linkPattern) : null;
+  const baseHost = new URL(baseUrl).host;
   const out = new Set<string>();
   $(selector).each((_, el) => {
     const href = $(el).attr("href");
     if (!href) return;
-    let abs: string;
+    let absUrl: URL;
     try {
-      abs = new URL(href, baseUrl).toString();
+      absUrl = new URL(href, baseUrl);
     } catch {
       return;
     }
+    if (absUrl.host === baseHost) return;
+    const abs = absUrl.toString();
     if (pattern && !pattern.test(abs)) return;
     out.add(abs);
   });
