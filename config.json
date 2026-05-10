@@ -1,0 +1,8 @@
+{
+  "feeds": [
+    {
+      "pageUrl": "https://unbreaking.org/issues/immigration/",
+      "linkSelector": ".table-timeline a"
+    }
+  ]
+}
