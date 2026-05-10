@@ -171,6 +171,7 @@ function tryCss($: cheerio.CheerioAPI): { author?: string } {
     ".author-name",
     ".authorText",
     ".link-LIBpto",
+    ".node--view-mode-article-author",
     ".page-info-header__author-title",
     ".byline__author",
     ".b-byline__names",
