@@ -10,6 +10,15 @@ Real-world data showed `admin`, `adminK`, `Editorial Team`, etc. landing in the 
 ### Length cap on extracted author
 Cap the author name at, say, 80 chars; if longer, treat as no-author. Catches the "My Name is Mike and I'd Rather be Surfing." class of tagline-as-byline. Prevents overlong values from making the sheet ugly. ~3 lines.
 
+### Live progress output
+Right now the CLI is silent until the final JSON summary, which is rough when a run takes 30+ seconds extracting 25 articles — you can't tell if it's working, hanging, or stuck on one slow site. Better UX:
+
+- Per-feed start line: `Scanning https://example.org/news... 26 links found, 4 new`
+- Per-URL line as each extract resolves: `[3/4] ✓ Sarah Ogilvie — "The rise of the broligarchy"` or `[3/4] ✗ fetch failed: 403 — https://...`
+- Final summary stays as JSON (so it's still pipe-able)
+
+Behind a default-on flag with `--quiet` for the script-friendly mode (only the summary JSON). Probably 30 minutes of work in `run.ts` — pass an optional `onProgress` callback through `RunOptions`, wire it from `cli.ts`. Doesn't change any tests.
+
 ### `--feed <pageUrl>` flag
 Let me run a single feed from `config.json` instead of the whole list. Useful when iterating on selectors for one source. Also pairs well with `--dry-run`.
 
