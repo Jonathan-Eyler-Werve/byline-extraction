@@ -43,7 +43,7 @@ This skips both reading and writing the sheet (so all matched links count as "ne
 | author | author_email | source_url | page_url | title | published_at | extracted_at | error |
 |--------|--------------|------------|----------|-------|--------------|--------------|-------|
 
-`source_url` (the article) is the dedup key. Failed extractions are stored as rows with `error` populated and `author=""`. For multi-author articles, v1 records only the first author.
+`source_url` (the article) is the dedup key. Failed extractions are stored as rows with `error` populated and `author=""`. Multi-author articles get all authors joined with `, ` in the `author` column.
 
 ## Privacy
 

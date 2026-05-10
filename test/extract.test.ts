@@ -18,6 +18,14 @@ describe("extractAuthorFromHtml — JSON-LD", () => {
     expect(r.publishedAt).toBe("2026-04-01T10:00:00Z");
     expect(r.sourceUrl).toBe("https://example.com/jsonld");
   });
+
+  it("joins multiple JSON-LD authors with ', '", () => {
+    const r = extractAuthorFromHtml(
+      fx("article-jsonld-multi-author.html"),
+      "https://example.com/multi",
+    );
+    expect(r.author).toBe("Ada Lovelace, Grace Hopper, Margaret Hamilton");
+  });
 });
 
 describe("extractAuthorFromHtml — meta tags", () => {

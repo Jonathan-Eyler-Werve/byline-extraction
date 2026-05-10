@@ -40,18 +40,25 @@ function tryJsonLd($: cheerio.CheerioAPI): {
         (Array.isArray(type) &&
           type.some((t) => typeof t === "string" && /Article|BlogPosting/.test(t)));
       if (!isArticle) continue;
-      const author = node.author as
+      const authorVal = node.author as
         | { name?: string; email?: string }
         | { name?: string; email?: string }[]
         | string
         | undefined;
-      const first = Array.isArray(author) ? author[0] : author;
-      if (typeof first === "string" && !out.author) out.author = first;
-      else if (first && typeof first === "object") {
-        if (first.name && !out.author) out.author = first.name;
-        if (first.email && !out.authorEmail && !isGenericMailbox(first.email))
-          out.authorEmail = first.email;
+      const authorList = Array.isArray(authorVal) ? authorVal : [authorVal];
+      const names: string[] = [];
+      for (const a of authorList) {
+        if (!a) continue;
+        if (typeof a === "string") {
+          names.push(a);
+        } else if (typeof a === "object") {
+          if (a.name) names.push(a.name);
+          if (a.email && !out.authorEmail && !isGenericMailbox(a.email)) {
+            out.authorEmail = a.email;
+          }
+        }
       }
+      if (names.length && !out.author) out.author = names.join(", ");
       if (typeof node.headline === "string" && !out.title)
         out.title = node.headline;
       if (typeof node.datePublished === "string" && !out.publishedAt)
