@@ -8,7 +8,8 @@ const GENERIC_MAILBOX_LOCAL_PARTS = new Set([
   "press", "newsroom", "support", "help", "admin", "office",
 ]);
 
-function isGenericMailbox(email: string): boolean {
+function isGenericMailbox(email: unknown): boolean {
+  if (typeof email !== "string") return false;
   const local = email.split("@")[0]?.toLowerCase() ?? "";
   return GENERIC_MAILBOX_LOCAL_PARTS.has(local);
 }
@@ -25,8 +26,37 @@ const GENERIC_AUTHOR_NAMES = new Set([
   "guest author",
 ]);
 
-function isGenericAuthorName(name: string): boolean {
+function isGenericAuthorName(name: unknown): boolean {
+  if (typeof name !== "string") return false;
   return GENERIC_AUTHOR_NAMES.has(name.trim().toLowerCase());
+}
+
+function jsonLdGetString(value: unknown, fields: readonly string[]): string | undefined {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed || undefined;
+  }
+  if (value && typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    for (const field of fields) {
+      const nested = jsonLdGetString(obj[field], fields);
+      if (nested) return nested;
+    }
+  }
+  return undefined;
+}
+
+function jsonLdAuthorName(value: unknown): string | undefined {
+  // schema.org typically uses .name; some sites wrap values as {@value:..., @language:...}.
+  return jsonLdGetString(value, ["name", "@value"]);
+}
+
+function jsonLdAuthorEmail(value: unknown): string | undefined {
+  if (value && typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    return jsonLdGetString(obj.email, ["@value"]);
+  }
+  return undefined;
 }
 
 function tryJsonLd($: cheerio.CheerioAPI): {
@@ -65,13 +95,11 @@ function tryJsonLd($: cheerio.CheerioAPI): {
       const names: string[] = [];
       for (const a of authorList) {
         if (!a) continue;
-        if (typeof a === "string") {
-          if (!isGenericAuthorName(a)) names.push(a);
-        } else if (typeof a === "object") {
-          if (a.name && !isGenericAuthorName(a.name)) names.push(a.name);
-          if (a.email && !out.authorEmail && !isGenericMailbox(a.email)) {
-            out.authorEmail = a.email;
-          }
+        const name = jsonLdAuthorName(a);
+        if (name && !isGenericAuthorName(name)) names.push(name);
+        const email = jsonLdAuthorEmail(a);
+        if (email && !out.authorEmail && !isGenericMailbox(email)) {
+          out.authorEmail = email;
         }
       }
       if (names.length && !out.author) out.author = names.join(", ");

@@ -34,6 +34,14 @@ describe("extractAuthorFromHtml — JSON-LD", () => {
     );
     expect(r.author).toBe("Carol Smith");
   });
+
+  it("extracts JSON-LD author.name from a nested @value structure", () => {
+    const r = extractAuthorFromHtml(
+      fx("article-jsonld-nested-name.html"),
+      "https://example.com/nested",
+    );
+    expect(r.author).toBe("Jane Doe");
+  });
 });
 
 describe("extractAuthorFromHtml — generic-name fallthrough", () => {
