@@ -33,6 +33,9 @@ Add an optional `delayMs` to each feed config; sleep between article fetches for
 ### Custom User-Agent
 Right now we send Node's default UA. Some sites block it with 403 (we saw this with `surfertoday.com`, `barefootsurftravel.com`). A polite UA like `byline-extraction/0.1 (+contact url)` won't fix all blocks but reduces some.
 
+### Per-feed `ignoreHosts` list
+Empirically, ~20% of outbound article links from a typical Organization page go to publications that 401/403 from any non-browser client (NYT, WSJ, Reuters, Bloomberg, Politico, surfertoday.com, etc. — DataDome / PerimeterX / Akamai bot managers). These are unrecoverable without a real headless browser. Add an optional `ignoreHosts: ["nytimes.com", "wsj.com", ...]` per feed so we skip them upfront — reduces noise in the progress output and saves the per-URL fetch round trip. Failed rows still show up if you want to handle them manually; the ignore list is for known-impossible cases. ~20 lines.
+
 ### Retry on transient errors
 Distinguish 5xx, network errors, and timeouts from 4xx. Retry transient ones once with backoff. Permanent (404, 403) stay failed and get logged. Likely converts a couple of the current 6 failures into successes.
 
@@ -43,6 +46,15 @@ Add a `?token=...` parameter the script validates against a hardcoded secret. UR
 A `--retry-errors` flag that reads rows from the sheet where `error` is non-empty, deletes the URL from `seen` for that run, and re-extracts. Useful after fixing a heuristic or when a transient site outage cleared.
 
 ## Larger
+
+### Headless-browser fallback for bot-protected sites
+The 401/403 floor from DataDome / PerimeterX / Cloudflare bot managers is real and meaningful — Reuters, NYT, WSJ, Bloomberg, Politico, surfertoday, michiganadvance, minnesotareformer, azmirror all blocked our Node fetch. Plain `fetch` can never extract from these even with a perfect User-Agent because the protection inspects TLS fingerprint, JS execution, and behavioral signals. Realistic options:
+
+- **Playwright + stealth plugins**, optionally with residential proxies. Adds ~250 MB of dependency, a Chromium download, and ongoing maintenance as the anti-bot vendors catch up. Belongs in a separate `--scrape-with-browser` mode that's not the default path.
+- **`curl-impersonate`** as the HTTP client for these hosts. Lighter than headless Chrome but still significant; doesn't solve JS challenges so won't help with the harder protections.
+- **Accept and route to humans**: failed rows already carry the URL and an `error`. A human opens the URL in a real browser, copies the byline, pastes back. Probably the right default for a low-volume tool.
+
+I'd recommend deferring the headless option indefinitely unless the percentage of unscrapable URLs becomes a material gap. The math: a few minutes of human paste-work per week is cheaper than the maintenance cost of an anti-bot arms race.
 
 ### Multi-author support
 Spec defers to "first author wins". For things like co-bylined news pieces, consider:

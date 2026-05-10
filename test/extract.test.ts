@@ -18,6 +18,58 @@ describe("extractAuthorFromHtml — JSON-LD", () => {
     expect(r.publishedAt).toBe("2026-04-01T10:00:00Z");
     expect(r.sourceUrl).toBe("https://example.com/jsonld");
   });
+
+  it("joins multiple JSON-LD authors with ', '", () => {
+    const r = extractAuthorFromHtml(
+      fx("article-jsonld-multi-author.html"),
+      "https://example.com/multi",
+    );
+    expect(r.author).toBe("Ada Lovelace, Grace Hopper, Margaret Hamilton");
+  });
+
+  it("drops generic JSON-LD authors but keeps real ones from the same array", () => {
+    const r = extractAuthorFromHtml(
+      fx("article-jsonld-mixed-generic.html"),
+      "https://example.com/mixed",
+    );
+    expect(r.author).toBe("Carol Smith");
+  });
+
+  it("extracts JSON-LD author.name from a nested @value structure", () => {
+    const r = extractAuthorFromHtml(
+      fx("article-jsonld-nested-name.html"),
+      "https://example.com/nested",
+    );
+    expect(r.author).toBe("Jane Doe");
+  });
+});
+
+describe("extractAuthorFromHtml — generic-name fallthrough", () => {
+  it("skips a generic meta author (e.g. 'admin') and falls through to CSS byline", () => {
+    const r = extractAuthorFromHtml(
+      fx("article-generic-meta.html"),
+      "https://example.com/generic-meta",
+    );
+    expect(r.author).toBe("Carol Smith");
+  });
+});
+
+describe("extractAuthorFromHtml — copyright fallback", () => {
+  it("extracts a personal name from a copyright line when no other signal exists", () => {
+    const r = extractAuthorFromHtml(
+      fx("article-copyright-only.html"),
+      "https://example.com/copyright",
+    );
+    expect(r.author).toBe("John Baker");
+  });
+
+  it("ignores corporate copyright lines (Inc, Incorporated, Group, etc.)", () => {
+    const r = extractAuthorFromHtml(
+      fx("article-copyright-corporate.html"),
+      "https://example.com/corp",
+    );
+    expect(r.author).toBe("");
+  });
 });
 
 describe("extractAuthorFromHtml — meta tags", () => {
@@ -48,6 +100,30 @@ describe("extractAuthorFromHtml — CSS fallback", () => {
     );
     expect(r.author).toBe("");
     expect(r.authorEmail).toBeUndefined();
+  });
+
+  it("collapses whitespace in multi-line byline markup (NPR-style)", () => {
+    const r = extractAuthorFromHtml(
+      fx("article-css-multiline-byline.html"),
+      "https://example.com/npr",
+    );
+    expect(r.author).toBe("Ashley Lopez , Benjamin Swasey");
+  });
+
+  it("extracts from .post-author (WordPress hentry pattern)", () => {
+    const r = extractAuthorFromHtml(
+      fx("article-post-author.html"),
+      "https://example.com/wp",
+    );
+    expect(r.author).toBe("Stewart Brand");
+  });
+
+  it("extracts from .page-info-header__author-title", () => {
+    const r = extractAuthorFromHtml(
+      fx("article-page-info-header.html"),
+      "https://example.com/page-info",
+    );
+    expect(r.author).toBe("Helen Mukerjee");
   });
 });
 
