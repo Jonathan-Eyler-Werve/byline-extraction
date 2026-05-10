@@ -26,6 +26,24 @@ describe("extractAuthorFromHtml — JSON-LD", () => {
     );
     expect(r.author).toBe("Ada Lovelace, Grace Hopper, Margaret Hamilton");
   });
+
+  it("drops generic JSON-LD authors but keeps real ones from the same array", () => {
+    const r = extractAuthorFromHtml(
+      fx("article-jsonld-mixed-generic.html"),
+      "https://example.com/mixed",
+    );
+    expect(r.author).toBe("Carol Smith");
+  });
+});
+
+describe("extractAuthorFromHtml — generic-name fallthrough", () => {
+  it("skips a generic meta author (e.g. 'admin') and falls through to CSS byline", () => {
+    const r = extractAuthorFromHtml(
+      fx("article-generic-meta.html"),
+      "https://example.com/generic-meta",
+    );
+    expect(r.author).toBe("Carol Smith");
+  });
 });
 
 describe("extractAuthorFromHtml — meta tags", () => {

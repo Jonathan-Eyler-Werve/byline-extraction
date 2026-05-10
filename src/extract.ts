@@ -13,6 +13,22 @@ function isGenericMailbox(email: string): boolean {
   return GENERIC_MAILBOX_LOCAL_PARTS.has(local);
 }
 
+const GENERIC_AUTHOR_NAMES = new Set([
+  "admin",
+  "administrator",
+  "editor",
+  "editors",
+  "editorial team",
+  "staff",
+  "newsroom",
+  "contributor",
+  "guest author",
+]);
+
+function isGenericAuthorName(name: string): boolean {
+  return GENERIC_AUTHOR_NAMES.has(name.trim().toLowerCase());
+}
+
 function tryJsonLd($: cheerio.CheerioAPI): {
   author?: string;
   authorEmail?: string;
@@ -50,9 +66,9 @@ function tryJsonLd($: cheerio.CheerioAPI): {
       for (const a of authorList) {
         if (!a) continue;
         if (typeof a === "string") {
-          names.push(a);
+          if (!isGenericAuthorName(a)) names.push(a);
         } else if (typeof a === "object") {
-          if (a.name) names.push(a.name);
+          if (a.name && !isGenericAuthorName(a.name)) names.push(a.name);
           if (a.email && !out.authorEmail && !isGenericMailbox(a.email)) {
             out.authorEmail = a.email;
           }
@@ -109,8 +125,10 @@ function tryCss($: cheerio.CheerioAPI): { author?: string } {
     const clone = node.clone();
     clone.find('a[href^="mailto:"]').remove();
     const text = clone.text().trim();
-    if (text) {
-      return { author: text.replace(/^by\s+/i, "").trim() };
+    if (!text) continue;
+    const candidate = text.replace(/^by\s+/i, "").trim();
+    if (candidate && !isGenericAuthorName(candidate)) {
+      return { author: candidate };
     }
   }
   return {};
@@ -125,7 +143,10 @@ function tryMeta($: cheerio.CheerioAPI): {
   const metaAuthor =
     $('meta[name="author"]').attr("content") ??
     $('meta[property="article:author"]').attr("content");
-  if (metaAuthor && metaAuthor.trim()) out.author = metaAuthor.trim();
+  const trimmedMetaAuthor = metaAuthor?.trim();
+  if (trimmedMetaAuthor && !isGenericAuthorName(trimmedMetaAuthor)) {
+    out.author = trimmedMetaAuthor;
+  }
   const title = $("title").first().text().trim();
   if (title) out.title = title;
   const published = $('meta[property="article:published_time"]').attr("content");
