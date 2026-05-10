@@ -49,6 +49,14 @@ describe("extractAuthorFromHtml — CSS fallback", () => {
     expect(r.author).toBe("");
     expect(r.authorEmail).toBeUndefined();
   });
+
+  it("extracts from .post-author (WordPress hentry pattern)", () => {
+    const r = extractAuthorFromHtml(
+      fx("article-post-author.html"),
+      "https://example.com/wp",
+    );
+    expect(r.author).toBe("Stewart Brand");
+  });
 });
 
 describe("extractAuthorFromHtml — email", () => {

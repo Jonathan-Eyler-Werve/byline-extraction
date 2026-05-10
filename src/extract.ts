@@ -82,10 +82,19 @@ function tryEmail($: cheerio.CheerioAPI): { authorEmail?: string } {
 function tryCss($: cheerio.CheerioAPI): { author?: string } {
   const selectors = [
     '[rel="author"]',
+    '[itemprop="author"] [itemprop="name"]',
+    '[itemprop="author"]',
+    ".post-author",
+    ".entry-author",
+    ".article-author",
+    ".author-name",
+    ".byline__author",
+    ".byline-name",
     ".byline",
     ".author",
-    ".article-author",
-    "[itemprop=author]",
+    ".h-card .p-name",
+    ".vcard .fn",
+    "address[class*=author]",
   ];
   for (const sel of selectors) {
     const node = $(sel).first();
