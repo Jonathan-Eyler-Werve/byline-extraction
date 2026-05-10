@@ -2,7 +2,43 @@
   "feeds": [
     {
       "pageUrl": "https://unbreaking.org/issues/immigration/",
-      "linkSelector": ".table-timeline a"
+      "linkSelector": ".table-timeline a, .footnote a"
+    },
+    {
+      "pageUrl": "https://unbreaking.org/issues/equality-at-work-decimating-the-federal-workforce/",
+      "linkSelector": ".table-timeline a, .footnote a"
+    },
+    {
+      "pageUrl": "https://unbreaking.org/issues/archives-history/",
+      "linkSelector": ".table-timeline a, .footnote a"
+    },
+    {
+      "pageUrl": "https://unbreaking.org/issues/data-security/",
+      "linkSelector": ".table-timeline a, .footnote a"
+    },
+    {
+      "pageUrl": "https://unbreaking.org/issues/infectious-disease-control/",
+      "linkSelector": ".table-timeline a, .footnote a"
+    },
+    {
+      "pageUrl": "https://unbreaking.org/issues/transgender-healthcare/",
+      "linkSelector": ".table-timeline a, .footnote a"
+    },
+    {
+      "pageUrl": "https://unbreaking.org/issues/food-safety/",
+      "linkSelector": ".table-timeline a, .footnote a"
+    },
+    {
+      "pageUrl": "https://unbreaking.org/issues/medicaid/",
+      "linkSelector": ".table-timeline a, .footnote a"
+    },
+    {
+      "pageUrl": "https://unbreaking.org/issues/medical-research-funding/",
+      "linkSelector": ".table-timeline a, .footnote a"
+    },
+    {
+      "pageUrl": "https://unbreaking.org/issues/postal-service/",
+      "linkSelector": ".table-timeline a, .footnote a"
     }
   ]
 }

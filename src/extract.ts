@@ -24,11 +24,16 @@ const GENERIC_AUTHOR_NAMES = new Set([
   "newsroom",
   "contributor",
   "guest author",
+  "all rights reserved",
 ]);
 
 function isGenericAuthorName(name: unknown): boolean {
   if (typeof name !== "string") return false;
   return GENERIC_AUTHOR_NAMES.has(name.trim().toLowerCase());
+}
+
+function collapseWhitespace(s: string): string {
+  return s.replace(/\s+/g, " ").trim();
 }
 
 function jsonLdGetString(value: unknown, fields: readonly string[]): string | undefined {
@@ -159,11 +164,16 @@ function tryCss($: cheerio.CheerioAPI): { author?: string } {
     '[rel="author"]',
     '[itemprop="author"] [itemprop="name"]',
     '[itemprop="author"]',
+    '[data-p1-tag="Article_Byline"]',
     ".post-author",
     ".entry-author",
     ".article-author",
     ".author-name",
+    ".authorText",
+    ".link-LIBpto",
+    ".page-info-header__author-title",
     ".byline__author",
+    ".b-byline__names",
     ".byline-name",
     ".byline",
     ".author",
@@ -238,6 +248,8 @@ export function extractAuthorFromHtml(
     const email = tryEmail($);
     if (email.authorEmail) result.authorEmail = email.authorEmail;
   }
+
+  if (result.author) result.author = collapseWhitespace(result.author);
 
   return result;
 }

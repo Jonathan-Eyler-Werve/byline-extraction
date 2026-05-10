@@ -102,12 +102,28 @@ describe("extractAuthorFromHtml — CSS fallback", () => {
     expect(r.authorEmail).toBeUndefined();
   });
 
+  it("collapses whitespace in multi-line byline markup (NPR-style)", () => {
+    const r = extractAuthorFromHtml(
+      fx("article-css-multiline-byline.html"),
+      "https://example.com/npr",
+    );
+    expect(r.author).toBe("Ashley Lopez , Benjamin Swasey");
+  });
+
   it("extracts from .post-author (WordPress hentry pattern)", () => {
     const r = extractAuthorFromHtml(
       fx("article-post-author.html"),
       "https://example.com/wp",
     );
     expect(r.author).toBe("Stewart Brand");
+  });
+
+  it("extracts from .page-info-header__author-title", () => {
+    const r = extractAuthorFromHtml(
+      fx("article-page-info-header.html"),
+      "https://example.com/page-info",
+    );
+    expect(r.author).toBe("Helen Mukerjee");
   });
 });
 
