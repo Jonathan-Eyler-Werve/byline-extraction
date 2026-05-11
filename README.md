@@ -74,8 +74,8 @@ The Apps Script replaces the existing row in place — no duplicates.
 
 ## Sheet schema
 
-| author | author_email | source_url | page_url | title | published_at | extracted_at | error |
-|--------|--------------|------------|----------|-------|--------------|--------------|-------|
+| feed_title | author | author_email | source_url | page_url | title | published_at | extracted_at | error |
+|------------|--------|--------------|------------|----------|-------|--------------|--------------|-------|
 
 `source_url` (the article) is the dedup key. Failed extractions are stored as rows with `error` populated and `author=""`. Multi-author articles get all authors joined with `, ` in the `author` column.
 

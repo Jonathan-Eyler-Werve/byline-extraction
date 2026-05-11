@@ -90,7 +90,11 @@ export async function run(opts: RunOptions): Promise<RunSummary> {
       const sourceUrl = newSourceUrls[i];
       try {
         const partial = await extractAuthor(sourceUrl, fetchImpl);
-        const result: ExtractionResult = { ...partial, pageUrl: feed.pageUrl };
+        const result: ExtractionResult = {
+          ...partial,
+          pageUrl: feed.pageUrl,
+          feedTitle: feed.title,
+        };
         feedRows.push(result);
         summary.successes += 1;
         emit({
@@ -107,6 +111,7 @@ export async function run(opts: RunOptions): Promise<RunSummary> {
           sourceUrl,
           author: "",
           pageUrl: feed.pageUrl,
+          feedTitle: feed.title,
           error,
         });
         summary.failures += 1;

@@ -3,6 +3,7 @@ export type ExtractionResult = {
   author: string;
   authorEmail?: string;
   pageUrl: string;
+  feedTitle?: string;
   title?: string;
   publishedAt?: string;
   error?: string;

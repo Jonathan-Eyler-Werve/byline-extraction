@@ -47,6 +47,32 @@ describe("run", () => {
     });
   });
 
+  it("includes feed.title as pageTitle on appended rows when configured", async () => {
+    const config = {
+      feeds: [
+        { pageUrl: "https://org.example/news", title: "News", linkSelector: "a.x" },
+      ],
+    };
+    const appended: any[] = [];
+    const sheet: SheetClient = {
+      readSeenSourceUrls: async () => new Set<string>(),
+      appendRows: async (rows) => { appended.push(...rows); },
+    };
+    const fakeFetch = async (url: string | URL | Request) => {
+      const u = url.toString();
+      if (u === "https://org.example/news") {
+        return new Response(`<a class="x" href="https://other.com/a">A</a>`, { status: 200 });
+      }
+      return new Response(`<html><head><meta name="author" content="X"></head></html>`, { status: 200 });
+    };
+    await run({ config, sheet, fetchImpl: fakeFetch as typeof fetch });
+    expect(appended[0]).toMatchObject({
+      sourceUrl: "https://other.com/a",
+      pageUrl: "https://org.example/news",
+      feedTitle: "News",
+    });
+  });
+
   it("records extraction errors as rows with error populated", async () => {
     const config = {
       feeds: [{ pageUrl: "https://org.example/news", linkSelector: "a.x" }],

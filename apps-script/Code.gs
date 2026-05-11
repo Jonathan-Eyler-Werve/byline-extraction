@@ -8,6 +8,7 @@
 
 const SHEET_NAME = "Sheet1";
 const COLUMNS = [
+  "feed_title",
   "author",
   "author_email",
   "source_url",
@@ -82,6 +83,7 @@ function doPost(request) {
     for (const row of rows) {
       const ts = new Date().toISOString();
       const rowValues = [
+        row.feedTitle || "",
         row.author || "",
         row.authorEmail || "",
         row.sourceUrl || "",
