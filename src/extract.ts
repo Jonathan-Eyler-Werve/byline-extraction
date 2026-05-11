@@ -167,6 +167,7 @@ function tryCss($: cheerio.CheerioAPI): { author?: string } {
     '[itemprop="author"] [itemprop="name"]',
     '[itemprop="author"]',
     '[data-p1-tag="Article_Byline"]',
+    '[data-test="author-name"]',
     ".post-author",
     ".entry-author",
     ".article-author",
@@ -174,6 +175,8 @@ function tryCss($: cheerio.CheerioAPI): { author?: string } {
     ".authorText",
     ".link-LIBpto",
     ".node--view-mode-article-author",
+    ".news-article__hero__bottom-meta-link",
+    ".post-header__meta",
     ".page-info-header__author-title",
     ".byline__author",
     ".b-byline__names",
@@ -205,13 +208,30 @@ function tryMeta($: cheerio.CheerioAPI): {
   publishedAt?: string;
 } {
   const out: ReturnType<typeof tryMeta> = {};
-  const metaAuthor =
-    $('meta[name="author"]').attr("content") ??
-    $('meta[property="article:author"]').attr("content");
-  const trimmedMetaAuthor = metaAuthor?.trim();
-  if (trimmedMetaAuthor && !isGenericAuthorName(trimmedMetaAuthor)) {
-    out.author = trimmedMetaAuthor;
+
+  // Academic / Google Scholar convention: one <meta name="citation_author">
+  // per author. Preferred when present.
+  const citationAuthors: string[] = [];
+  $('meta[name="citation_author"]').each((_, el) => {
+    const content = $(el).attr("content")?.trim();
+    if (content && !isGenericAuthorName(content)) {
+      citationAuthors.push(content);
+    }
+  });
+  if (citationAuthors.length > 0) {
+    out.author = citationAuthors.join("; ");
   }
+
+  if (!out.author) {
+    const metaAuthor =
+      $('meta[name="author"]').attr("content") ??
+      $('meta[property="article:author"]').attr("content");
+    const trimmedMetaAuthor = metaAuthor?.trim();
+    if (trimmedMetaAuthor && !isGenericAuthorName(trimmedMetaAuthor)) {
+      out.author = trimmedMetaAuthor;
+    }
+  }
+
   const title = $("title").first().text().trim();
   if (title) out.title = title;
   const published = $('meta[property="article:published_time"]').attr("content");

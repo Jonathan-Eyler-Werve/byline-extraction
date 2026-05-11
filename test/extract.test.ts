@@ -82,6 +82,14 @@ describe("extractAuthorFromHtml — meta tags", () => {
     expect(r.title).toBe("Meta Article");
     expect(r.publishedAt).toBe("2026-03-15T08:00:00Z");
   });
+
+  it("collects all <meta name=citation_author> tags joined with '; '", () => {
+    const r = extractAuthorFromHtml(
+      fx("article-meta-citation-authors.html"),
+      "https://example.com/academic",
+    );
+    expect(r.author).toBe("Doe, Jane; Smith, John; Lee, Alex");
+  });
 });
 
 describe("extractAuthorFromHtml — CSS fallback", () => {
