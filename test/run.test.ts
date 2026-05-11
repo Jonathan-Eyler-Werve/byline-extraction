@@ -47,6 +47,32 @@ describe("run", () => {
     });
   });
 
+  it("includes feed.title as pageTitle on appended rows when configured", async () => {
+    const config = {
+      feeds: [
+        { pageUrl: "https://org.example/news", title: "News", linkSelector: "a.x" },
+      ],
+    };
+    const appended: any[] = [];
+    const sheet: SheetClient = {
+      readSeenSourceUrls: async () => new Set<string>(),
+      appendRows: async (rows) => { appended.push(...rows); },
+    };
+    const fakeFetch = async (url: string | URL | Request) => {
+      const u = url.toString();
+      if (u === "https://org.example/news") {
+        return new Response(`<a class="x" href="https://other.com/a">A</a>`, { status: 200 });
+      }
+      return new Response(`<html><head><meta name="author" content="X"></head></html>`, { status: 200 });
+    };
+    await run({ config, sheet, fetchImpl: fakeFetch as typeof fetch });
+    expect(appended[0]).toMatchObject({
+      sourceUrl: "https://other.com/a",
+      pageUrl: "https://org.example/news",
+      feedTitle: "News",
+    });
+  });
+
   it("records extraction errors as rows with error populated", async () => {
     const config = {
       feeds: [{ pageUrl: "https://org.example/news", linkSelector: "a.x" }],
@@ -130,6 +156,30 @@ describe("run", () => {
     expect(events.find((e) => e.type === "persist-done")).toMatchObject({ rowCount: 2 });
   });
 
+  it("includes feed.title on the feed-start event when configured", async () => {
+    const config = {
+      feeds: [
+        { pageUrl: "https://org.example/news", title: "News", linkSelector: "a.x" },
+      ],
+    };
+    const sheet: SheetClient = {
+      readSeenSourceUrls: async () => new Set<string>(),
+      appendRows: async () => {},
+    };
+    const fakeFetch = async () => new Response("", { status: 200 });
+    const events: ProgressEvent[] = [];
+    await run({
+      config,
+      sheet,
+      fetchImpl: fakeFetch as typeof fetch,
+      onProgress: (e) => events.push(e),
+    });
+    expect(events.find((e) => e.type === "feed-start")).toMatchObject({
+      title: "News",
+      pageUrl: "https://org.example/news",
+    });
+  });
+
   it("persists after each feed instead of once at the end", async () => {
     const config = {
       feeds: [
@@ -205,6 +255,49 @@ describe("run", () => {
     const types = events.map((e) => e.type);
     expect(types).not.toContain("persist-start");
     expect(types).not.toContain("persist-done");
+  });
+
+  it("passes retryErrors through to readSeenSourceUrls", async () => {
+    let receivedOpts: { excludeErrors?: boolean } | undefined;
+    const config = {
+      feeds: [{ pageUrl: "https://org.example/news", linkSelector: "a.x" }],
+    };
+    const sheet: SheetClient = {
+      readSeenSourceUrls: async (opts) => {
+        receivedOpts = opts;
+        return new Set<string>();
+      },
+      appendRows: async () => {},
+    };
+    const fakeFetch = async () => new Response("", { status: 200 });
+    await run({
+      config,
+      sheet,
+      fetchImpl: fakeFetch as typeof fetch,
+      retryErrors: true,
+    });
+    expect(receivedOpts?.excludeErrors).toBe(true);
+  });
+
+  it("omits excludeErrors when retryErrors is not set", async () => {
+    let receivedOpts: { excludeErrors?: boolean } | undefined;
+    const config = {
+      feeds: [{ pageUrl: "https://org.example/news", linkSelector: "a.x" }],
+    };
+    const sheet: SheetClient = {
+      readSeenSourceUrls: async (opts) => {
+        receivedOpts = opts;
+        return new Set<string>();
+      },
+      appendRows: async () => {},
+    };
+    const fakeFetch = async () => new Response("", { status: 200 });
+    await run({
+      config,
+      sheet,
+      fetchImpl: fakeFetch as typeof fetch,
+    });
+    expect(receivedOpts?.excludeErrors).toBeFalsy();
   });
 
   it("emits feed-error and skips feed-links when feed fetch fails", async () => {

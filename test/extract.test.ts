@@ -82,6 +82,14 @@ describe("extractAuthorFromHtml — meta tags", () => {
     expect(r.title).toBe("Meta Article");
     expect(r.publishedAt).toBe("2026-03-15T08:00:00Z");
   });
+
+  it("collects all <meta name=citation_author> tags joined with '; '", () => {
+    const r = extractAuthorFromHtml(
+      fx("article-meta-citation-authors.html"),
+      "https://example.com/academic",
+    );
+    expect(r.author).toBe("Doe, Jane; Smith, John; Lee, Alex");
+  });
 });
 
 describe("extractAuthorFromHtml — CSS fallback", () => {
@@ -159,5 +167,15 @@ describe("extractAuthor (fetch wrapper)", () => {
     await expect(
       extractAuthor("https://example.com/x", fakeFetch as typeof fetch),
     ).rejects.toThrow(/500/);
+  });
+
+  it("sends a polite User-Agent header", async () => {
+    let capturedHeaders: Record<string, string> | undefined;
+    const fakeFetch = async (_url: string | URL | Request, init?: RequestInit) => {
+      capturedHeaders = init?.headers as Record<string, string>;
+      return new Response("<html></html>", { status: 200 });
+    };
+    await extractAuthor("https://example.com/x", fakeFetch as typeof fetch);
+    expect(capturedHeaders?.["User-Agent"]).toMatch(/^byline-extraction\//);
   });
 });

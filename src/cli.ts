@@ -19,7 +19,11 @@ program
     "Don't read or write the sheet; print what would be appended. No webhook required.",
   )
   .option("-q, --quiet", "Suppress progress output; only print the JSON summary on stdout.")
-  .action(async (opts: { config: string; dryRun?: boolean; quiet?: boolean }) => {
+  .option(
+    "--retry-errors",
+    "Re-attempt extraction for rows previously persisted with an error. Updates existing rows in place.",
+  )
+  .action(async (opts: { config: string; dryRun?: boolean; quiet?: boolean; retryErrors?: boolean }) => {
     const config = loadConfig(opts.config);
     let sheet: SheetClient;
     if (opts.dryRun) {
@@ -35,7 +39,8 @@ program
         console.error("WEBHOOK_URL is required (or pass --dry-run). See apps-script/Code.gs for the webhook to deploy.");
         process.exit(2);
       }
-      sheet = makeWebhookSheetClient({ webhookUrl });
+      const token = process.env.WEBHOOK_TOKEN || undefined;
+      sheet = makeWebhookSheetClient({ webhookUrl, token });
     }
 
     if (!opts.quiet) {
@@ -49,7 +54,12 @@ program
     }
 
     const onProgress = opts.quiet ? undefined : renderEvent;
-    const summary = await run({ config, sheet, onProgress });
+    const summary = await run({
+      config,
+      sheet,
+      onProgress,
+      retryErrors: opts.retryErrors,
+    });
     console.log(JSON.stringify(summary, null, 2));
     if (summary.failures > 0) process.exitCode = 1;
   });
@@ -74,9 +84,11 @@ function renderEvent(e: ProgressEvent): void {
     case "sheet-read-done":
       process.stderr.write(`${e.count} known\n`);
       break;
-    case "feed-start":
-      process.stderr.write(`\nFeed ${e.index}/${e.total}: ${e.pageUrl}\n`);
+    case "feed-start": {
+      const label = e.title ? `${e.title} (${e.pageUrl})` : e.pageUrl;
+      process.stderr.write(`\nFeed ${e.index}/${e.total}: ${label}\n`);
       break;
+    }
     case "feed-links":
       process.stderr.write(`Found ${e.found} links, ${e.newCount} new.\nThis feed will take ~${Math.ceil(e.newCount / 3)} seconds.\n\n`);
       break;

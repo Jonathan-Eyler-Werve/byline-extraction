@@ -1,5 +1,6 @@
 import * as cheerio from "cheerio";
 import type { FeedConfig } from "./types.js";
+import { USER_AGENT } from "./userAgent.js";
 
 export function extractLinksFromHtml(
   html: string,
@@ -33,6 +34,7 @@ export async function findLinks(
   fetchImpl: typeof fetch = fetch,
 ): Promise<string[]> {
   const res = await fetchImpl(feed.pageUrl, {
+    headers: { "User-Agent": USER_AGENT },
     signal: AbortSignal.timeout(15_000),
   });
   if (!res.ok) {

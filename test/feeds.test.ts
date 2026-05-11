@@ -76,4 +76,17 @@ describe("findLinks", () => {
       ),
     ).rejects.toThrow(/500/);
   });
+
+  it("sends a polite User-Agent header", async () => {
+    let capturedHeaders: Record<string, string> | undefined;
+    const fakeFetch = async (_url: string | URL | Request, init?: RequestInit) => {
+      capturedHeaders = init?.headers as Record<string, string>;
+      return new Response("", { status: 200 });
+    };
+    await findLinks(
+      { pageUrl: "https://other.com", linkSelector: "a" },
+      fakeFetch as typeof fetch,
+    );
+    expect(capturedHeaders?.["User-Agent"]).toMatch(/^byline-extraction\//);
+  });
 });

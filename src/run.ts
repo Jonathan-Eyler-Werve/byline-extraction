@@ -13,7 +13,7 @@ export type RunSummary = {
 export type ProgressEvent =
   | { type: "sheet-read-start" }
   | { type: "sheet-read-done"; count: number }
-  | { type: "feed-start"; pageUrl: string; index: number; total: number }
+  | { type: "feed-start"; pageUrl: string; title?: string; index: number; total: number }
   | { type: "feed-links"; pageUrl: string; found: number; newCount: number }
   | { type: "feed-error"; pageUrl: string; error: string }
   | {
@@ -33,6 +33,7 @@ export type RunOptions = {
   sheet: SheetClient;
   fetchImpl?: typeof fetch;
   onProgress?: (event: ProgressEvent) => void;
+  retryErrors?: boolean;
 };
 
 export async function run(opts: RunOptions): Promise<RunSummary> {
@@ -40,7 +41,9 @@ export async function run(opts: RunOptions): Promise<RunSummary> {
   const emit = opts.onProgress ?? (() => {});
 
   emit({ type: "sheet-read-start" });
-  const seen = await opts.sheet.readSeenSourceUrls();
+  const seen = await opts.sheet.readSeenSourceUrls(
+    opts.retryErrors ? { excludeErrors: true } : undefined,
+  );
   emit({ type: "sheet-read-done", count: seen.size });
 
   const summary: RunSummary = {
@@ -57,6 +60,7 @@ export async function run(opts: RunOptions): Promise<RunSummary> {
     emit({
       type: "feed-start",
       pageUrl: feed.pageUrl,
+      title: feed.title,
       index: feedIdx + 1,
       total: totalFeeds,
     });
@@ -86,7 +90,11 @@ export async function run(opts: RunOptions): Promise<RunSummary> {
       const sourceUrl = newSourceUrls[i];
       try {
         const partial = await extractAuthor(sourceUrl, fetchImpl);
-        const result: ExtractionResult = { ...partial, pageUrl: feed.pageUrl };
+        const result: ExtractionResult = {
+          ...partial,
+          pageUrl: feed.pageUrl,
+          feedTitle: feed.title,
+        };
         feedRows.push(result);
         summary.successes += 1;
         emit({
@@ -103,6 +111,7 @@ export async function run(opts: RunOptions): Promise<RunSummary> {
           sourceUrl,
           author: "",
           pageUrl: feed.pageUrl,
+          feedTitle: feed.title,
           error,
         });
         summary.failures += 1;

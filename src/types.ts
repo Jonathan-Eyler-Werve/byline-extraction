@@ -3,6 +3,7 @@ export type ExtractionResult = {
   author: string;
   authorEmail?: string;
   pageUrl: string;
+  feedTitle?: string;
   title?: string;
   publishedAt?: string;
   error?: string;
@@ -10,6 +11,7 @@ export type ExtractionResult = {
 
 export type FeedConfig = {
   pageUrl: string;
+  title?: string;
   linkSelector?: string;
   linkPattern?: string;
 };
