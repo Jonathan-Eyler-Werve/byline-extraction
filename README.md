@@ -92,3 +92,7 @@ The user agent passed to news sites identifies itself with a link to the GitHub 
 ```bash
 npm test
 ```
+
+## License
+
+MIT — see [LICENSE](LICENSE).
