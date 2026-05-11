@@ -35,7 +35,8 @@ program
         console.error("WEBHOOK_URL is required (or pass --dry-run). See apps-script/Code.gs for the webhook to deploy.");
         process.exit(2);
       }
-      sheet = makeWebhookSheetClient({ webhookUrl });
+      const token = process.env.WEBHOOK_TOKEN || undefined;
+      sheet = makeWebhookSheetClient({ webhookUrl, token });
     }
 
     if (!opts.quiet) {

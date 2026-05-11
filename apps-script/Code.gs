@@ -18,9 +18,10 @@ const COLUMNS = [
   "error",
 ];
 
-function doGet(e) {
+function doGet(request) {
   try {
-    const op = e.parameter.op;
+    if (!checkAuth_(request)) return jsonResponse_({ error: "unauthorized" });
+    const op = request.parameter.op;
     if (op === "seen") {
       const sheet = ensureSheet_();
       const lastRow = sheet.getLastRow();
@@ -28,8 +29,8 @@ function doGet(e) {
       if (lastRow >= 2) {
         const sourceUrlCol = COLUMNS.indexOf("source_url") + 1;
         const range = sheet.getRange(2, sourceUrlCol, lastRow - 1, 1);
-        urls = range.getValues().flat().filter(function (v) {
-          return typeof v === "string" && v.length > 0;
+        urls = range.getValues().flat().filter(function (cellValue) {
+          return typeof cellValue === "string" && cellValue.length > 0;
         });
       }
       return jsonResponse_({ urls: urls });
@@ -40,26 +41,27 @@ function doGet(e) {
   }
 }
 
-function doPost(e) {
+function doPost(request) {
   try {
-    const body = JSON.parse(e.postData.contents);
+    if (!checkAuth_(request)) return jsonResponse_({ error: "unauthorized" });
+    const body = JSON.parse(request.postData.contents);
     if (body.op !== "append") {
       return jsonResponse_({ error: "unknown op: " + body.op });
     }
     const rows = body.rows || [];
     if (rows.length === 0) return jsonResponse_({ appended: 0 });
     const sheet = ensureSheet_();
-    const values = rows.map(function (r) {
+    const values = rows.map(function (row) {
       const ts = new Date().toISOString();
       return [
-        r.author || "",
-        r.authorEmail || "",
-        r.sourceUrl || "",
-        r.pageUrl || "",
-        r.title || "",
-        r.publishedAt || "",
+        row.author || "",
+        row.authorEmail || "",
+        row.sourceUrl || "",
+        row.pageUrl || "",
+        row.title || "",
+        row.publishedAt || "",
         ts,
-        r.error || "",
+        row.error || "",
       ];
     });
     sheet.getRange(sheet.getLastRow() + 1, 1, values.length, COLUMNS.length).setValues(values);
@@ -67,6 +69,17 @@ function doPost(e) {
   } catch (err) {
     return jsonResponse_({ error: String(err) });
   }
+}
+
+function checkAuth_(request) {
+  // Every request must include ?token=<value> matching the TOKEN value
+  // stored in Project Settings → Script Properties. If TOKEN is not set
+  // on the script, all requests are rejected — secure by default. To
+  // enable the webhook, set TOKEN to a long random string and put the
+  // same value in the caller's WEBHOOK_TOKEN env var.
+  const expected = PropertiesService.getScriptProperties().getProperty("TOKEN");
+  if (!expected) return false;
+  return request && request.parameter && request.parameter.token === expected;
 }
 
 function ensureSheet_() {

@@ -84,7 +84,7 @@ describe("makeWebhookSheetClient", () => {
   it("throws on non-2xx", async () => {
     const fakeFetch = async () => new Response("nope", { status: 500 });
     const c = makeWebhookSheetClient({
-      webhookUrl: "x",
+      webhookUrl: "https://example.com/exec",
       fetchImpl: fakeFetch as typeof fetch,
     });
     await expect(c.readSeenSourceUrls()).rejects.toThrow(/500/);
@@ -94,9 +94,57 @@ describe("makeWebhookSheetClient", () => {
     const fakeFetch = async () =>
       new Response(JSON.stringify({ error: "denied" }), { status: 200 });
     const c = makeWebhookSheetClient({
-      webhookUrl: "x",
+      webhookUrl: "https://example.com/exec",
       fetchImpl: fakeFetch as typeof fetch,
     });
     await expect(c.readSeenSourceUrls()).rejects.toThrow(/denied/);
+  });
+
+  it("appends token to GET URL when provided", async () => {
+    const calls: string[] = [];
+    const fakeFetch = async (url: string | URL | Request) => {
+      calls.push(url.toString());
+      return new Response(JSON.stringify({ urls: [] }), { status: 200 });
+    };
+    const c = makeWebhookSheetClient({
+      webhookUrl: "https://example.com/exec",
+      token: "secret123",
+      fetchImpl: fakeFetch as typeof fetch,
+    });
+    await c.readSeenSourceUrls();
+    expect(calls[0]).toContain("op=seen");
+    expect(calls[0]).toContain("token=secret123");
+  });
+
+  it("appends token to POST URL when provided", async () => {
+    const calls: string[] = [];
+    const fakeFetch = async (url: string | URL | Request, init?: RequestInit) => {
+      calls.push(url.toString());
+      expect(init?.method).toBe("POST");
+      return new Response(JSON.stringify({ appended: 1 }), { status: 200 });
+    };
+    const c = makeWebhookSheetClient({
+      webhookUrl: "https://example.com/exec",
+      token: "secret123",
+      fetchImpl: fakeFetch as typeof fetch,
+    });
+    await c.appendRows([
+      { sourceUrl: "u", author: "a", pageUrl: "p" },
+    ]);
+    expect(calls[0]).toContain("token=secret123");
+  });
+
+  it("does not append a token when none is provided", async () => {
+    const calls: string[] = [];
+    const fakeFetch = async (url: string | URL | Request) => {
+      calls.push(url.toString());
+      return new Response(JSON.stringify({ urls: [] }), { status: 200 });
+    };
+    const c = makeWebhookSheetClient({
+      webhookUrl: "https://example.com/exec",
+      fetchImpl: fakeFetch as typeof fetch,
+    });
+    await c.readSeenSourceUrls();
+    expect(calls[0]).not.toContain("token=");
   });
 });

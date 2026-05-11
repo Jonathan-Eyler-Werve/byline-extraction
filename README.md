@@ -15,6 +15,20 @@ Scrapes configured Organization pages for outbound article links, extracts the a
 
 No GCP project, service account, or `googleapis` library required — the Apps Script runs as you (the sheet owner) and the URL is the only secret.
 
+### Required: shared-secret token
+
+The script is secure by default — every request must include `?token=<value>` matching the `TOKEN` Script Property. If `TOKEN` isn't set, the script rejects all requests.
+
+To set it up:
+
+1. Generate one: `openssl rand -hex 16`
+2. In Apps Script → **Project Settings → Script Properties → Add property**:
+   - Property: `TOKEN`
+   - Value: the generated string
+3. In `.env`, set `WEBHOOK_TOKEN=<same value>`.
+
+The CLI then appends `?token=<value>` to every request; the script rejects calls without a matching token. Both layers are independent — leaking one alone doesn't grant write access.
+
 ## Run
 
 ```bash
