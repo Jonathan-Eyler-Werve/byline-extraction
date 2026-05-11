@@ -1,5 +1,6 @@
 import * as cheerio from "cheerio";
 import type { ExtractionResult } from "./types.js";
+import { USER_AGENT } from "./userAgent.js";
 
 type PartialResult = Omit<ExtractionResult, "pageUrl">;
 
@@ -261,6 +262,7 @@ export async function extractAuthor(
   fetchImpl: typeof fetch = fetch,
 ): Promise<PartialResult> {
   const res = await fetchImpl(sourceUrl, {
+    headers: { "User-Agent": USER_AGENT },
     signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) {

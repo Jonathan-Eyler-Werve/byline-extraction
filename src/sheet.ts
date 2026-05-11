@@ -1,4 +1,5 @@
 import type { ExtractionResult } from "./types.js";
+import { USER_AGENT } from "./userAgent.js";
 
 export type SheetClient = {
   readSeenSourceUrls(): Promise<Set<string>>;
@@ -48,6 +49,7 @@ export function makeWebhookSheetClient(opts: {
   return {
     readSeenSourceUrls: async () => {
       const res = await fetchImpl(buildUrl({ op: "seen" }), {
+        headers: { "User-Agent": USER_AGENT },
         signal: AbortSignal.timeout(30_000),
       });
       const data = await parse(res, "seen");
@@ -58,7 +60,10 @@ export function makeWebhookSheetClient(opts: {
       if (rows.length === 0) return;
       const res = await fetchImpl(buildUrl(), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "User-Agent": USER_AGENT,
+        },
         body: JSON.stringify({ op: "append", rows }),
         signal: AbortSignal.timeout(60_000),
       });
