@@ -5,6 +5,12 @@
 //   Execute as:    Me
 //   Who has access: Anyone with the link
 // Copy the URL — that's the WEBHOOK_URL the CLI needs.
+//
+// REQUIRED: in Project Settings → Script Properties, add a property named
+// TOKEN with a long random value (e.g. `openssl rand -hex 16`). The script
+// rejects every request without a matching ?token= parameter; without
+// TOKEN set, all requests fail. Put the same value in the CLI's
+// WEBHOOK_TOKEN env var.
 
 const SHEET_NAME = "Sheet1";
 const COLUMNS = [

@@ -1,7 +1,8 @@
 # Byline Extraction — Design
 
+> **Status: Archival.** This was the initial design from 2026-05-09. The implementation has diverged in several material ways since — notably the Google Sheets integration uses an Apps Script webhook rather than `googleapis` Sheets v4, the schema starts with a `feed_title` column not described here, and several v1 non-goals (scheduling, retry, multi-author) have been implemented. See `README.md` and the current source for ground truth.
+
 **Date:** 2026-05-09
-**Status:** Draft, pending review
 
 ## Goal
 
