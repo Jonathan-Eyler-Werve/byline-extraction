@@ -61,7 +61,10 @@ program
       retryErrors: opts.retryErrors,
     });
     console.log(JSON.stringify(summary, null, 2));
-    if (summary.failures > 0) process.exitCode = 1;
+    // Row-level extraction errors (403/404/timeout) are normal and don't
+    // fail the CLI — they're recorded in the sheet with `error` populated
+    // and counted in summary.failures. Catastrophic errors (sheet auth,
+    // network to webhook) throw from run() and are caught below as exit 2.
   });
 
 function hostOf(url: string): string {

@@ -93,6 +93,16 @@ The user agent passed to news sites identifies itself with a link to the GitHub 
 npm test
 ```
 
+## Scheduled runs (GitHub Actions)
+
+`.github/workflows/run.yml` runs the CLI daily on a GitHub-hosted Ubuntu runner. To enable:
+
+1. Add repo secrets at **Settings → Secrets and variables → Actions**: `WEBHOOK_URL` and `WEBHOOK_TOKEN` (same values as your local `.env`).
+2. The workflow defaults to **14:13 UTC daily**. Edit the `cron:` line to change cadence.
+3. A "Run workflow" button on the Actions tab triggers it manually for testing.
+
+The CLI exits 0 even when some URLs failed extraction (403/404/timeout are normal). Only catastrophic errors — sheet auth failure, webhook unreachable, missing env vars — produce a non-zero exit. Row-level failures land in the sheet with `error` populated and are counted in the printed JSON summary, so the Actions UI's pass/fail tracks "did the run complete?" rather than "did every URL succeed?"
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
