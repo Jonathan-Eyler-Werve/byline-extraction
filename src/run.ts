@@ -33,6 +33,7 @@ export type RunOptions = {
   sheet: SheetClient;
   fetchImpl?: typeof fetch;
   onProgress?: (event: ProgressEvent) => void;
+  retryErrors?: boolean;
 };
 
 export async function run(opts: RunOptions): Promise<RunSummary> {
@@ -40,7 +41,9 @@ export async function run(opts: RunOptions): Promise<RunSummary> {
   const emit = opts.onProgress ?? (() => {});
 
   emit({ type: "sheet-read-start" });
-  const seen = await opts.sheet.readSeenSourceUrls();
+  const seen = await opts.sheet.readSeenSourceUrls(
+    opts.retryErrors ? { excludeErrors: true } : undefined,
+  );
   emit({ type: "sheet-read-done", count: seen.size });
 
   const summary: RunSummary = {

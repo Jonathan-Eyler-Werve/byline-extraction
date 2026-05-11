@@ -28,10 +28,20 @@ function doGet(request) {
       let urls = [];
       if (lastRow >= 2) {
         const sourceUrlCol = COLUMNS.indexOf("source_url") + 1;
-        const range = sheet.getRange(2, sourceUrlCol, lastRow - 1, 1);
-        urls = range.getValues().flat().filter(function (cellValue) {
-          return typeof cellValue === "string" && cellValue.length > 0;
-        });
+        const errorCol = COLUMNS.indexOf("error") + 1;
+        const excludeErrors = request.parameter.excludeErrors === "1";
+        const startCol = Math.min(sourceUrlCol, errorCol);
+        const numCols = Math.abs(errorCol - sourceUrlCol) + 1;
+        const range = sheet.getRange(2, startCol, lastRow - 1, numCols);
+        const values = range.getValues();
+        const sourceOffset = sourceUrlCol - startCol;
+        const errorOffset = errorCol - startCol;
+        urls = values
+          .filter(function (row) {
+            if (excludeErrors && row[errorOffset]) return false;
+            return typeof row[sourceOffset] === "string" && row[sourceOffset].length > 0;
+          })
+          .map(function (row) { return row[sourceOffset]; });
       }
       return jsonResponse_({ urls: urls });
     }
@@ -49,11 +59,29 @@ function doPost(request) {
       return jsonResponse_({ error: "unknown op: " + body.op });
     }
     const rows = body.rows || [];
-    if (rows.length === 0) return jsonResponse_({ appended: 0 });
+    if (rows.length === 0) return jsonResponse_({ appended: 0, updated: 0 });
     const sheet = ensureSheet_();
-    const values = rows.map(function (row) {
+
+    // Build map of existing source_url -> 1-based row index so we can upsert.
+    const sourceUrlCol = COLUMNS.indexOf("source_url") + 1;
+    const lastRow = sheet.getLastRow();
+    const existingByUrl = {};
+    if (lastRow >= 2) {
+      const existingRange = sheet.getRange(2, sourceUrlCol, lastRow - 1, 1);
+      const existingValues = existingRange.getValues();
+      for (let i = 0; i < existingValues.length; i++) {
+        const cellValue = existingValues[i][0];
+        if (typeof cellValue === "string" && cellValue.length > 0) {
+          existingByUrl[cellValue] = i + 2;
+        }
+      }
+    }
+
+    const appendValues = [];
+    let updatedCount = 0;
+    for (const row of rows) {
       const ts = new Date().toISOString();
-      return [
+      const rowValues = [
         row.author || "",
         row.authorEmail || "",
         row.sourceUrl || "",
@@ -63,9 +91,18 @@ function doPost(request) {
         ts,
         row.error || "",
       ];
-    });
-    sheet.getRange(sheet.getLastRow() + 1, 1, values.length, COLUMNS.length).setValues(values);
-    return jsonResponse_({ appended: values.length });
+      const existingRowIndex = existingByUrl[row.sourceUrl];
+      if (existingRowIndex) {
+        sheet.getRange(existingRowIndex, 1, 1, COLUMNS.length).setValues([rowValues]);
+        updatedCount++;
+      } else {
+        appendValues.push(rowValues);
+      }
+    }
+    if (appendValues.length > 0) {
+      sheet.getRange(sheet.getLastRow() + 1, 1, appendValues.length, COLUMNS.length).setValues(appendValues);
+    }
+    return jsonResponse_({ appended: appendValues.length, updated: updatedCount });
   } catch (err) {
     return jsonResponse_({ error: String(err) });
   }

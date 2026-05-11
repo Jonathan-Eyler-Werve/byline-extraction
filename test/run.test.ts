@@ -207,6 +207,49 @@ describe("run", () => {
     expect(types).not.toContain("persist-done");
   });
 
+  it("passes retryErrors through to readSeenSourceUrls", async () => {
+    let receivedOpts: { excludeErrors?: boolean } | undefined;
+    const config = {
+      feeds: [{ pageUrl: "https://org.example/news", linkSelector: "a.x" }],
+    };
+    const sheet: SheetClient = {
+      readSeenSourceUrls: async (opts) => {
+        receivedOpts = opts;
+        return new Set<string>();
+      },
+      appendRows: async () => {},
+    };
+    const fakeFetch = async () => new Response("", { status: 200 });
+    await run({
+      config,
+      sheet,
+      fetchImpl: fakeFetch as typeof fetch,
+      retryErrors: true,
+    });
+    expect(receivedOpts?.excludeErrors).toBe(true);
+  });
+
+  it("omits excludeErrors when retryErrors is not set", async () => {
+    let receivedOpts: { excludeErrors?: boolean } | undefined;
+    const config = {
+      feeds: [{ pageUrl: "https://org.example/news", linkSelector: "a.x" }],
+    };
+    const sheet: SheetClient = {
+      readSeenSourceUrls: async (opts) => {
+        receivedOpts = opts;
+        return new Set<string>();
+      },
+      appendRows: async () => {},
+    };
+    const fakeFetch = async () => new Response("", { status: 200 });
+    await run({
+      config,
+      sheet,
+      fetchImpl: fakeFetch as typeof fetch,
+    });
+    expect(receivedOpts?.excludeErrors).toBeFalsy();
+  });
+
   it("emits feed-error and skips feed-links when feed fetch fails", async () => {
     const config = {
       feeds: [{ pageUrl: "https://org.example/news", linkSelector: "a.x" }],

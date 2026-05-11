@@ -2,7 +2,7 @@ import type { ExtractionResult } from "./types.js";
 import { USER_AGENT } from "./userAgent.js";
 
 export type SheetClient = {
-  readSeenSourceUrls(): Promise<Set<string>>;
+  readSeenSourceUrls(opts?: { excludeErrors?: boolean }): Promise<Set<string>>;
   appendRows(rows: ExtractionResult[]): Promise<void>;
 };
 
@@ -47,8 +47,10 @@ export function makeWebhookSheetClient(opts: {
   };
 
   return {
-    readSeenSourceUrls: async () => {
-      const res = await fetchImpl(buildUrl({ op: "seen" }), {
+    readSeenSourceUrls: async (readOpts) => {
+      const params: Record<string, string> = { op: "seen" };
+      if (readOpts?.excludeErrors) params.excludeErrors = "1";
+      const res = await fetchImpl(buildUrl(params), {
         headers: { "User-Agent": USER_AGENT },
         signal: AbortSignal.timeout(30_000),
       });

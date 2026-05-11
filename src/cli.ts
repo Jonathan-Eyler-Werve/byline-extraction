@@ -19,7 +19,11 @@ program
     "Don't read or write the sheet; print what would be appended. No webhook required.",
   )
   .option("-q, --quiet", "Suppress progress output; only print the JSON summary on stdout.")
-  .action(async (opts: { config: string; dryRun?: boolean; quiet?: boolean }) => {
+  .option(
+    "--retry-errors",
+    "Re-attempt extraction for rows previously persisted with an error. Updates existing rows in place.",
+  )
+  .action(async (opts: { config: string; dryRun?: boolean; quiet?: boolean; retryErrors?: boolean }) => {
     const config = loadConfig(opts.config);
     let sheet: SheetClient;
     if (opts.dryRun) {
@@ -50,7 +54,12 @@ program
     }
 
     const onProgress = opts.quiet ? undefined : renderEvent;
-    const summary = await run({ config, sheet, onProgress });
+    const summary = await run({
+      config,
+      sheet,
+      onProgress,
+      retryErrors: opts.retryErrors,
+    });
     console.log(JSON.stringify(summary, null, 2));
     if (summary.failures > 0) process.exitCode = 1;
   });

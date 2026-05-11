@@ -62,6 +62,16 @@ Suppresses progress output; only the JSON summary prints on stdout. Useful for s
 node dist/cli.js run --quiet
 ```
 
+### Retry errored rows
+
+By default, URLs that failed extraction in a previous run are recorded in the sheet (with `error` populated and `author=""`) and skipped on subsequent runs. To re-attempt them after fixing a heuristic or when a site outage clears, pass `--retry-errors`:
+
+```bash
+node dist/cli.js run --retry-errors
+```
+
+The Apps Script replaces the existing row in place — no duplicates.
+
 ## Sheet schema
 
 | author | author_email | source_url | page_url | title | published_at | extracted_at | error |

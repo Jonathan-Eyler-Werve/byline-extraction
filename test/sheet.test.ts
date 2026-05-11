@@ -147,4 +147,32 @@ describe("makeWebhookSheetClient", () => {
     await c.readSeenSourceUrls();
     expect(calls[0]).not.toContain("token=");
   });
+
+  it("appends excludeErrors=1 to GET URL when option is set", async () => {
+    const calls: string[] = [];
+    const fakeFetch = async (url: string | URL | Request) => {
+      calls.push(url.toString());
+      return new Response(JSON.stringify({ urls: [] }), { status: 200 });
+    };
+    const c = makeWebhookSheetClient({
+      webhookUrl: "https://example.com/exec",
+      fetchImpl: fakeFetch as typeof fetch,
+    });
+    await c.readSeenSourceUrls({ excludeErrors: true });
+    expect(calls[0]).toContain("excludeErrors=1");
+  });
+
+  it("omits excludeErrors when option is not set", async () => {
+    const calls: string[] = [];
+    const fakeFetch = async (url: string | URL | Request) => {
+      calls.push(url.toString());
+      return new Response(JSON.stringify({ urls: [] }), { status: 200 });
+    };
+    const c = makeWebhookSheetClient({
+      webhookUrl: "https://example.com/exec",
+      fetchImpl: fakeFetch as typeof fetch,
+    });
+    await c.readSeenSourceUrls();
+    expect(calls[0]).not.toContain("excludeErrors");
+  });
 });
