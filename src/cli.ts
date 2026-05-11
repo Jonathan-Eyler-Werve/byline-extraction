@@ -84,9 +84,11 @@ function renderEvent(e: ProgressEvent): void {
     case "sheet-read-done":
       process.stderr.write(`${e.count} known\n`);
       break;
-    case "feed-start":
-      process.stderr.write(`\nFeed ${e.index}/${e.total}: ${e.pageUrl}\n`);
+    case "feed-start": {
+      const label = e.title ? `${e.title} (${e.pageUrl})` : e.pageUrl;
+      process.stderr.write(`\nFeed ${e.index}/${e.total}: ${label}\n`);
       break;
+    }
     case "feed-links":
       process.stderr.write(`Found ${e.found} links, ${e.newCount} new.\nThis feed will take ~${Math.ceil(e.newCount / 3)} seconds.\n\n`);
       break;

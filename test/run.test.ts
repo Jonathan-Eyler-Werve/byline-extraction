@@ -130,6 +130,30 @@ describe("run", () => {
     expect(events.find((e) => e.type === "persist-done")).toMatchObject({ rowCount: 2 });
   });
 
+  it("includes feed.title on the feed-start event when configured", async () => {
+    const config = {
+      feeds: [
+        { pageUrl: "https://org.example/news", title: "News", linkSelector: "a.x" },
+      ],
+    };
+    const sheet: SheetClient = {
+      readSeenSourceUrls: async () => new Set<string>(),
+      appendRows: async () => {},
+    };
+    const fakeFetch = async () => new Response("", { status: 200 });
+    const events: ProgressEvent[] = [];
+    await run({
+      config,
+      sheet,
+      fetchImpl: fakeFetch as typeof fetch,
+      onProgress: (e) => events.push(e),
+    });
+    expect(events.find((e) => e.type === "feed-start")).toMatchObject({
+      title: "News",
+      pageUrl: "https://org.example/news",
+    });
+  });
+
   it("persists after each feed instead of once at the end", async () => {
     const config = {
       feeds: [

@@ -13,7 +13,7 @@ export type RunSummary = {
 export type ProgressEvent =
   | { type: "sheet-read-start" }
   | { type: "sheet-read-done"; count: number }
-  | { type: "feed-start"; pageUrl: string; index: number; total: number }
+  | { type: "feed-start"; pageUrl: string; title?: string; index: number; total: number }
   | { type: "feed-links"; pageUrl: string; found: number; newCount: number }
   | { type: "feed-error"; pageUrl: string; error: string }
   | {
@@ -60,6 +60,7 @@ export async function run(opts: RunOptions): Promise<RunSummary> {
     emit({
       type: "feed-start",
       pageUrl: feed.pageUrl,
+      title: feed.title,
       index: feedIdx + 1,
       total: totalFeeds,
     });

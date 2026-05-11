@@ -10,6 +10,7 @@ export type ExtractionResult = {
 
 export type FeedConfig = {
   pageUrl: string;
+  title?: string;
   linkSelector?: string;
   linkPattern?: string;
 };
