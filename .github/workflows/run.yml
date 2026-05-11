@@ -1,0 +1,46 @@
+name: scheduled-run
+
+# Triggers:
+#   - schedule: daily at 14:13 UTC. Avoid top-of-hour to dodge GitHub's
+#     cron load spikes (top-of-hour scheduled jobs are frequently delayed
+#     5-30 min during peak hours).
+#   - workflow_dispatch: manual "Run workflow" button in the Actions UI,
+#     useful for ad-hoc runs and testing.
+on:
+  schedule:
+    - cron: "13 14 * * *"
+  workflow_dispatch:
+
+# Prevent overlapping runs. A manual run kicked off while a scheduled one
+# is in flight waits its turn instead of duplicating writes.
+concurrency:
+  group: byline-run
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - name: Run extraction
+        env:
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+          WEBHOOK_TOKEN: ${{ secrets.WEBHOOK_TOKEN }}
+        # CLI exits 0 even when some URLs failed extraction (403/404/timeout
+        # are normal); only catastrophic errors (sheet auth, webhook down)
+        # produce a non-zero exit. So this step's pass/fail in the Actions
+        # UI tracks "did the run complete?" rather than "did every URL
+        # succeed?". Per-URL failure counts are in the printed JSON summary.
+        run: node dist/cli.js run --quiet

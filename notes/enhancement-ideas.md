@@ -1,5 +1,20 @@
 # Enhancement Ideas
 
+> **Status: Archival.** Snapshot of ideas from the May 2026 build. Several have shipped since (see "Implemented since" below); the rest are still on the table but aren't a roadmap — treat as a menu.
+
+## Implemented since this list was written
+
+- Author-name denylist (`GENERIC_AUTHOR_NAMES` in `extract.ts`)
+- Live progress output with per-feed and per-URL lines, plus `--quiet`
+- Vitest 2 → 4 bump — cleared the dev-only esbuild CVEs
+- Polite identifiable User-Agent (`byline-extraction/0.1 (+repo)`)
+- Apps Script shared-secret token (`?token=` + `TOKEN` Script Property)
+- `--retry-errors` flag with upsert by `source_url` (this list called it "Backfill / retry mode")
+- Scheduling via GitHub Actions workflow (`.github/workflows/run.yml`)
+- Multi-author handling — JSON-LD authors joined with `, `, academic `<meta name="citation_author">` joined with `; `. The open question about a separate `coauthors` column or row-per-author hasn't been addressed.
+
+---
+
 Ranked by my read on value-vs-effort for this tool. Not a roadmap — pick what's useful.
 
 ## High value, small lift

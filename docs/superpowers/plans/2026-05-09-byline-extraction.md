@@ -1,5 +1,7 @@
 # Byline Extraction Implementation Plan
 
+> **Status: Archival.** This plan drove the initial v1 implementation on 2026-05-09. Many subsequent changes (Apps Script webhook pivot, token auth, `--retry-errors`, `feed_title` column, multi-author handling, GitHub Actions workflow, polite User-Agent, etc.) are not reflected here. See `README.md` and the current source for ground truth.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build a Node/TypeScript CLI (`byline run`) that scrapes configured Organization pages for outbound article links, extracts author and email from each new article using HTML heuristics, and appends rows to a Google Sheet.

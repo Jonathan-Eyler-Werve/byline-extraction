@@ -1,8 +1,8 @@
 # byline-extraction
 
-Scrapes configured Organization pages for outbound article links, extracts the author (and email when published) from each new article, and appends rows to a Google Sheet via a tiny Apps Script webhook.
+Scrapes configured pages for outbound article links, extracts the author (and email when published) from each news article, and appends rows to a Google Sheet via a Apps Script webhook.
 
-The goal of the app is to improve attribution to source authors by news aggregators.
+The goal is to improve attribution to source authors by news aggregators.
 
 In production, the scraper hits a news site one time per published citation. Limited retries, no spoofing.
 
@@ -64,34 +64,42 @@ node dist/cli.js run --quiet
 
 ### Retry errored rows
 
-By default, URLs that failed extraction in a previous run are recorded in the sheet (with `error` populated and `author=""`) and skipped on subsequent runs. To re-attempt them after fixing a heuristic or when a site outage clears, pass `--retry-errors`:
+By default, URLs that failed extraction in a previous run are recorded in the sheet and skipped on subsequent runs. To re-attempt them after fixing a heuristic or when a site outage clears, pass `--retry-errors`:
 
 ```bash
 node dist/cli.js run --retry-errors
 ```
 
-The Apps Script replaces the existing row in place — no duplicates.
+The Apps Script replaces the existing row in place.
 
 ## Sheet schema
 
 | feed_title | author | author_email | source_url | page_url | title | published_at | extracted_at | error |
 |------------|--------|--------------|------------|----------|-------|--------------|--------------|-------|
 
-`source_url` (the article) is the dedup key. Failed extractions are stored as rows with `error` populated and `author=""`. Multi-author articles get all authors joined with `, ` in the `author` column.
+`source_url` (the article) is the dedup key. Failed extractions are stored as rows with `error` populated and `author=""`. Multi-author articles get all authors joined with `, ` or `; ` in the `author` column.
 
 ## Privacy
 
 Treat the Google Sheet as private data.
 
-The output contains personal data (names; sometimes emails) about authors of articles linked. See `notes/project-plan.md`. Retention is enforced out-of-band: this v1 does not implement automated deletion.
+The output contains personal data (names; sometimes emails) about authors of articles linked. See `notes/project-plan.md`. Retention is enforced elsewhere: this v1 does not implement automated deletion.
 
-The user agent passed to news sites identifies itself with a link to the GitHub project.
+The user agent passed to news sites identifies itself with a link to this GitHub project.
 
 ## Tests
 
 ```bash
 npm test
 ```
+
+## Scheduled runs (GitHub Actions)
+
+`.github/workflows/run.yml` runs the CLI daily on a GitHub-hosted Ubuntu runner. To enable:
+
+1. Add repo secrets at **Settings → Secrets and variables → Actions**: `WEBHOOK_URL` and `WEBHOOK_TOKEN` (same values as your local `.env`).
+2. The workflow defaults to **14:13 UTC daily**. Edit the `cron:` line to change cadence.
+3. A "Run workflow" button on the Actions tab triggers it manually for testing.
 
 ## License
 
