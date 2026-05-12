@@ -31,7 +31,8 @@ const COLUMNS = [
 
 function doGet(request) {
   try {
-    if (!checkAuth_(request)) return jsonResponse_({ error: "unauthorized" });
+    const auth = checkAuth_(request);
+    if (!auth.ok) return jsonResponse_({ error: auth.error });
     const op = request.parameter.op;
     if (op === "seen") {
       const excludeErrors = request.parameter.excludeErrors === "1";
@@ -46,7 +47,8 @@ function doGet(request) {
 
 function doPost(request) {
   try {
-    if (!checkAuth_(request)) return jsonResponse_({ error: "unauthorized" });
+    const auth = checkAuth_(request);
+    if (!auth.ok) return jsonResponse_({ error: auth.error });
     const body = JSON.parse(request.postData.contents);
     if (body.op !== "append") {
       return jsonResponse_({ error: "unknown op: " + body.op });
@@ -143,8 +145,20 @@ function checkAuth_(request) {
   // enable the webhook, set TOKEN to a long random string and put the
   // same value in the caller's WEBHOOK_TOKEN env var.
   const expected = PropertiesService.getScriptProperties().getProperty("TOKEN");
-  if (!expected) return false;
-  return request && request.parameter && request.parameter.token === expected;
+  if (!expected) {
+    return {
+      ok: false,
+      error:
+        "TOKEN script property is not set. In Apps Script → Project Settings → " +
+        "Script Properties, add a property named TOKEN with a random value " +
+        "(e.g. `openssl rand -hex 16`), then put the same value in " +
+        "WEBHOOK_TOKEN in your .env. See README \"Required: shared-secret token\".",
+    };
+  }
+  if (!request || !request.parameter || request.parameter.token !== expected) {
+    return { ok: false, error: "unauthorized" };
+  }
+  return { ok: true };
 }
 
 function ensureSheet_() {
