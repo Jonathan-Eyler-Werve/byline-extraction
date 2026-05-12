@@ -30,26 +30,8 @@ function doGet(request) {
     if (!checkAuth_(request)) return jsonResponse_({ error: "unauthorized" });
     const op = request.parameter.op;
     if (op === "seen") {
-      const sheet = ensureSheet_();
-      const lastRow = sheet.getLastRow();
-      let urls = [];
-      if (lastRow >= 2) {
-        const sourceUrlCol = COLUMNS.indexOf("source_url") + 1;
-        const errorCol = COLUMNS.indexOf("error") + 1;
-        const excludeErrors = request.parameter.excludeErrors === "1";
-        const startCol = Math.min(sourceUrlCol, errorCol);
-        const numCols = Math.abs(errorCol - sourceUrlCol) + 1;
-        const range = sheet.getRange(2, startCol, lastRow - 1, numCols);
-        const values = range.getValues();
-        const sourceOffset = sourceUrlCol - startCol;
-        const errorOffset = errorCol - startCol;
-        urls = values
-          .filter(function (row) {
-            if (excludeErrors && row[errorOffset]) return false;
-            return typeof row[sourceOffset] === "string" && row[sourceOffset].length > 0;
-          })
-          .map(function (row) { return row[sourceOffset]; });
-      }
+      const excludeErrors = request.parameter.excludeErrors === "1";
+      const urls = readSeenUrls_(ensureSheet_(), excludeErrors);
       return jsonResponse_({ urls: urls });
     }
     return jsonResponse_({ error: "unknown op: " + op });
@@ -67,53 +49,78 @@ function doPost(request) {
     }
     const rows = body.rows || [];
     if (rows.length === 0) return jsonResponse_({ appended: 0, updated: 0 });
-    const sheet = ensureSheet_();
-
-    // Build map of existing source_url -> 1-based row index so we can upsert.
-    const sourceUrlCol = COLUMNS.indexOf("source_url") + 1;
-    const lastRow = sheet.getLastRow();
-    const existingByUrl = {};
-    if (lastRow >= 2) {
-      const existingRange = sheet.getRange(2, sourceUrlCol, lastRow - 1, 1);
-      const existingValues = existingRange.getValues();
-      for (let i = 0; i < existingValues.length; i++) {
-        const cellValue = existingValues[i][0];
-        if (typeof cellValue === "string" && cellValue.length > 0) {
-          existingByUrl[cellValue] = i + 2;
-        }
-      }
-    }
-
-    const appendValues = [];
-    let updatedCount = 0;
-    for (const row of rows) {
-      const ts = new Date().toISOString();
-      const rowValues = [
-        row.feedTitle || "",
-        row.author || "",
-        row.authorEmail || "",
-        row.sourceUrl || "",
-        row.pageUrl || "",
-        row.title || "",
-        row.publishedAt || "",
-        ts,
-        row.error || "",
-      ];
-      const existingRowIndex = existingByUrl[row.sourceUrl];
-      if (existingRowIndex) {
-        sheet.getRange(existingRowIndex, 1, 1, COLUMNS.length).setValues([rowValues]);
-        updatedCount++;
-      } else {
-        appendValues.push(rowValues);
-      }
-    }
-    if (appendValues.length > 0) {
-      sheet.getRange(sheet.getLastRow() + 1, 1, appendValues.length, COLUMNS.length).setValues(appendValues);
-    }
-    return jsonResponse_({ appended: appendValues.length, updated: updatedCount });
+    const result = upsertRows_(ensureSheet_(), rows);
+    return jsonResponse_(result);
   } catch (err) {
     return jsonResponse_({ error: String(err) });
   }
+}
+
+function readSeenUrls_(sheet, excludeErrors) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+
+  const sourceUrlCol = COLUMNS.indexOf("source_url") + 1;
+  const errorCol = COLUMNS.indexOf("error") + 1;
+  const startCol = Math.min(sourceUrlCol, errorCol);
+  const numCols = Math.abs(errorCol - sourceUrlCol) + 1;
+  const values = sheet.getRange(2, startCol, lastRow - 1, numCols).getValues();
+  const sourceOffset = sourceUrlCol - startCol;
+  const errorOffset = errorCol - startCol;
+
+  return values
+    .filter(function (row) {
+      if (excludeErrors && row[errorOffset]) return false;
+      return typeof row[sourceOffset] === "string" && row[sourceOffset].length > 0;
+    })
+    .map(function (row) { return row[sourceOffset]; });
+}
+
+function upsertRows_(sheet, rows) {
+  // Build map of existing source_url -> 1-based row index so we can upsert.
+  const sourceUrlCol = COLUMNS.indexOf("source_url") + 1;
+  const lastRow = sheet.getLastRow();
+  const existingByUrl = {};
+  if (lastRow >= 2) {
+    const existingValues = sheet.getRange(2, sourceUrlCol, lastRow - 1, 1).getValues();
+    for (let i = 0; i < existingValues.length; i++) {
+      const cellValue = existingValues[i][0];
+      if (typeof cellValue === "string" && cellValue.length > 0) {
+        existingByUrl[cellValue] = i + 2;
+      }
+    }
+  }
+
+  const appendValues = [];
+  let updatedCount = 0;
+  for (const row of rows) {
+    const rowValues = rowToValues_(row);
+    const existingRowIndex = existingByUrl[row.sourceUrl];
+    if (existingRowIndex) {
+      sheet.getRange(existingRowIndex, 1, 1, COLUMNS.length).setValues([rowValues]);
+      updatedCount++;
+    } else {
+      appendValues.push(rowValues);
+    }
+  }
+  if (appendValues.length > 0) {
+    sheet.getRange(sheet.getLastRow() + 1, 1, appendValues.length, COLUMNS.length).setValues(appendValues);
+  }
+  return { appended: appendValues.length, updated: updatedCount };
+}
+
+function rowToValues_(row) {
+  return [
+    row.feedTitle || "",
+    row.author || "",
+    row.authorEmail || "",
+    row.sourceUrl || "",
+    row.pageUrl || "",
+    row.title || "",
+    row.publishedAt || "",
+    new Date().toISOString(),
+    row.error || "",
+  ];
 }
 
 function checkAuth_(request) {
