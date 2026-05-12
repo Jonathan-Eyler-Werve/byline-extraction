@@ -15,7 +15,7 @@ describe("extractAuthorFromHtml — JSON-LD", () => {
     expect(r.author).toBe("Ada Lovelace");
     expect(r.authorEmail).toBe("ada@example.com");
     expect(r.title).toBe("JSON-LD Article");
-    expect(r.publishedAt).toBe("2026-04-01T10:00:00Z");
+    expect(r.publishedAt).toBe("2026-04-01");
     expect(r.sourceUrl).toBe("https://example.com/jsonld");
   });
 
@@ -80,7 +80,7 @@ describe("extractAuthorFromHtml — meta tags", () => {
     );
     expect(r.author).toBe("Grace Hopper");
     expect(r.title).toBe("Meta Article");
-    expect(r.publishedAt).toBe("2026-03-15T08:00:00Z");
+    expect(r.publishedAt).toBe("2026-03-15");
   });
 
   it("collects all <meta name=citation_author> tags joined with '; '", () => {

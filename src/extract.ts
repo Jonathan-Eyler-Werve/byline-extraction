@@ -38,6 +38,16 @@ function collapseWhitespace(s: string): string {
   return s.replace(/\s+/g, " ").trim();
 }
 
+// Normalize an arbitrary date string to "YYYY-MM-DD" (UTC). Used to give the
+// sheet a clusterable calendar-date column. Returns undefined for unparseable
+// input.
+function normalizeDate(value: unknown): string | undefined {
+  if (typeof value !== "string" || !value.trim()) return undefined;
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return undefined;
+  return d.toISOString().slice(0, 10);
+}
+
 function jsonLdGetString(value: unknown, fields: readonly string[]): string | undefined {
   if (typeof value === "string") {
     const trimmed = value.trim();
@@ -112,8 +122,10 @@ function tryJsonLd($: cheerio.CheerioAPI): {
       if (names.length && !out.author) out.author = names.join(", ");
       if (typeof node.headline === "string" && !out.title)
         out.title = node.headline;
-      if (typeof node.datePublished === "string" && !out.publishedAt)
-        out.publishedAt = node.datePublished;
+      if (!out.publishedAt) {
+        const datePublished = normalizeDate(node.datePublished);
+        if (datePublished) out.publishedAt = datePublished;
+      }
     }
   });
   return out;
@@ -234,7 +246,7 @@ function tryMeta($: cheerio.CheerioAPI): {
 
   const title = $("title").first().text().trim();
   if (title) out.title = title;
-  const published = $('meta[property="article:published_time"]').attr("content");
+  const published = normalizeDate($('meta[property="article:published_time"]').attr("content"));
   if (published) out.publishedAt = published;
   return out;
 }

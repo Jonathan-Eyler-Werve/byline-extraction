@@ -110,6 +110,9 @@ function upsertRows_(sheet, rows) {
 }
 
 function rowToValues_(row) {
+  // extracted_at as calendar date only (YYYY-MM-DD, UTC) so the column is
+  // clusterable by day in the sheet without per-cell timestamp noise.
+  const extractedAt = new Date().toISOString().slice(0, 10);
   return [
     row.feedTitle || "",
     row.author || "",
@@ -118,7 +121,7 @@ function rowToValues_(row) {
     row.pageUrl || "",
     row.title || "",
     row.publishedAt || "",
-    new Date().toISOString(),
+    extractedAt,
     row.error || "",
   ];
 }
