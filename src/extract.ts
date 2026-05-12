@@ -1,5 +1,6 @@
 import * as cheerio from "cheerio";
 import type { ExtractionResult } from "./types.js";
+import { extractSocials } from "./socials.js";
 import { USER_AGENT } from "./userAgent.js";
 
 type PartialResult = Omit<ExtractionResult, "pageUrl">;
@@ -285,6 +286,9 @@ export function extractAuthorFromHtml(
   }
 
   if (result.author) result.author = collapseWhitespace(result.author);
+
+  const socials = extractSocials($);
+  if (Object.keys(socials).length > 0) result.socials = socials;
 
   return result;
 }
