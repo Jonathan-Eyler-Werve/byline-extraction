@@ -1,3 +1,5 @@
+import * as cheerio from "cheerio";
+
 export type SocialColumn = "bluesky" | "instagram" | "linkedin" | "twitter";
 
 export type SocialResult = Partial<Record<SocialColumn, string[]>>;
@@ -56,4 +58,75 @@ export function classifySocial(
     return null;
   }
   return null;
+}
+
+function asArray<T>(value: T | T[] | undefined | null): T[] {
+  if (value == null) return [];
+  return Array.isArray(value) ? value : [value];
+}
+
+function collectSameAs(node: unknown): string[] {
+  if (!node || typeof node !== "object") return [];
+  const obj = node as Record<string, unknown>;
+  const same = obj.sameAs;
+  if (typeof same === "string") return [same];
+  if (Array.isArray(same)) return same.filter((s): s is string => typeof s === "string");
+  return [];
+}
+
+function jsonLdSocials(
+  $: cheerio.CheerioAPI,
+  sink: Map<SocialColumn, Set<string>>,
+): void {
+  $('script[type="application/ld+json"]').each((_, el) => {
+    const text = $(el).contents().text();
+    if (!text.trim()) return;
+    let data: unknown;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      return;
+    }
+    const candidates = Array.isArray(data) ? data : [data];
+    for (const candidate of candidates) {
+      if (!candidate || typeof candidate !== "object") continue;
+      const node = candidate as Record<string, unknown>;
+      const authors = asArray(node.author);
+      const publishers = asArray(node.publisher);
+      const allEntities = [...authors, ...publishers];
+      for (const entity of allEntities) {
+        for (const url of collectSameAs(entity)) {
+          const classified = classifySocial(url);
+          if (classified) sink.get(classified.column)!.add(classified.url);
+        }
+      }
+    }
+  });
+}
+
+function emptySink(): Map<SocialColumn, Set<string>> {
+  return new Map<SocialColumn, Set<string>>([
+    ["bluesky", new Set()],
+    ["instagram", new Set()],
+    ["linkedin", new Set()],
+    ["twitter", new Set()],
+  ]);
+}
+
+function sinkToResult(sink: Map<SocialColumn, Set<string>>): SocialResult {
+  const out: SocialResult = {};
+  for (const [column, urls] of sink) {
+    if (urls.size > 0) out[column] = [...urls];
+  }
+  return out;
+}
+
+export function extractSocials($: cheerio.CheerioAPI): SocialResult {
+  const sink = emptySink();
+  jsonLdSocials($, sink);
+  return sinkToResult(sink);
+}
+
+export function extractSocialsFromHtml(html: string): SocialResult {
+  return extractSocials(cheerio.load(html));
 }

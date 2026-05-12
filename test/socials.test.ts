@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { classifySocial } from "../src/socials.js";
+import { readFileSync } from "fs";
+import { join } from "path";
+import { classifySocial, extractSocialsFromHtml } from "../src/socials.js";
+
+const fx = (name: string) =>
+  readFileSync(join(__dirname, "fixtures", name), "utf8");
 
 describe("classifySocial — twitter / x", () => {
   it("classifies twitter.com profile URL as twitter", () => {
@@ -89,5 +94,31 @@ describe("classifySocial — negative cases", () => {
 
   it("rejects bare hash anchor", () => {
     expect(classifySocial("#")).toBeNull();
+  });
+});
+
+describe("extractSocialsFromHtml — JSON-LD sameAs", () => {
+  it("collects author + publisher sameAs URLs into per-platform columns", () => {
+    const result = extractSocialsFromHtml(fx("article-socials-jsonld.html"));
+    expect(result.twitter).toEqual(
+      expect.arrayContaining([
+        "https://twitter.com/bob",
+        "https://twitter.com/examplenewsroom",
+      ]),
+    );
+    expect(result.instagram).toEqual(
+      expect.arrayContaining([
+        "https://www.instagram.com/byalicefinno/",
+        "https://www.instagram.com/examplenewsroom/",
+      ]),
+    );
+    // example.com is not on the allowlist
+    expect(result.linkedin).toBeUndefined();
+    expect(result.bluesky).toBeUndefined();
+  });
+
+  it("handles sameAs as a single string (not array)", () => {
+    const result = extractSocialsFromHtml(fx("article-socials-jsonld.html"));
+    expect(result.twitter).toContain("https://twitter.com/bob");
   });
 });
