@@ -104,6 +104,36 @@ function jsonLdSocials(
   });
 }
 
+const BYLINE_AREA_SELECTOR = [
+  '[rel="author"]',
+  '[itemprop="author"]',
+  '.byline',
+  '.author',
+  '.Author-socialLinks',
+  '.jeg_author_socials',
+  '.author-bio',
+  '.mvp-author-info-text',
+  '.ArticlePage-authorInfo-bio',
+  '[class*="PostByline_author"]',
+  'address[class*=author]',
+].join(", ");
+
+function bylineAnchorSocials(
+  $: cheerio.CheerioAPI,
+  sink: Map<SocialColumn, Set<string>>,
+): void {
+  $(BYLINE_AREA_SELECTOR).each((_, area) => {
+    $(area)
+      .find("a[href]")
+      .each((_, a) => {
+        const href = $(a).attr("href");
+        if (!href) return;
+        const classified = classifySocial(href);
+        if (classified) sink.get(classified.column)!.add(classified.url);
+      });
+  });
+}
+
 function emptySink(): Map<SocialColumn, Set<string>> {
   return new Map<SocialColumn, Set<string>>([
     ["bluesky", new Set()],
@@ -124,6 +154,7 @@ function sinkToResult(sink: Map<SocialColumn, Set<string>>): SocialResult {
 export function extractSocials($: cheerio.CheerioAPI): SocialResult {
   const sink = emptySink();
   jsonLdSocials($, sink);
+  bylineAnchorSocials($, sink);
   return sinkToResult(sink);
 }
 

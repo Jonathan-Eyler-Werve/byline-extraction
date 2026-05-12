@@ -122,3 +122,18 @@ describe("extractSocialsFromHtml — JSON-LD sameAs", () => {
     expect(result.twitter).toContain("https://twitter.com/bob");
   });
 });
+
+describe("extractSocialsFromHtml — byline-area anchor scan", () => {
+  it("collects social anchors inside byline regions and drops shares/empties/out-of-area", () => {
+    const result = extractSocialsFromHtml(fx("article-socials-byline-anchors.html"));
+    expect(result.twitter).toEqual(["https://twitter.com/janedoe"]);
+    expect(result.instagram).toEqual(["https://www.instagram.com/janedoe/"]);
+    expect(result.linkedin).toEqual(["https://www.linkedin.com/in/janedoe/"]);
+    expect(result.bluesky).toEqual(["https://bsky.app/profile/janedoe.bsky.social"]);
+  });
+
+  it("does not pick up the in-story twitter.com/elsewhere link", () => {
+    const result = extractSocialsFromHtml(fx("article-socials-byline-anchors.html"));
+    expect(result.twitter).not.toContain("https://twitter.com/elsewhere");
+  });
+});
