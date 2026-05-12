@@ -137,3 +137,21 @@ describe("extractSocialsFromHtml — byline-area anchor scan", () => {
     expect(result.twitter).not.toContain("https://twitter.com/elsewhere");
   });
 });
+
+describe("extractSocialsFromHtml — combined sources", () => {
+  it("dedupes URLs that appear in both JSON-LD and byline anchors", () => {
+    const result = extractSocialsFromHtml(fx("article-socials-mixed.html"));
+    // twitter.com/sam appears in sameAs AND in the byline anchor → exactly once
+    expect(result.twitter?.filter((u) => u === "https://twitter.com/sam")).toHaveLength(1);
+    // Both author and publisher twitter URLs land in the same column
+    expect(result.twitter).toEqual(
+      expect.arrayContaining(["https://twitter.com/sam", "https://twitter.com/pub"]),
+    );
+    expect(result.linkedin).toEqual(["https://www.linkedin.com/in/sam/"]);
+  });
+
+  it("returns an empty result when only share intents and out-of-area links exist", () => {
+    const result = extractSocialsFromHtml(fx("article-socials-none.html"));
+    expect(result).toEqual({});
+  });
+});
