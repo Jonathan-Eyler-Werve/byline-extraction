@@ -12,7 +12,7 @@
 // TOKEN set, all requests fail. Put the same value in the CLI's
 // WEBHOOK_TOKEN env var.
 
-const SHEET_NAME = "Sheet1";
+const SHEET_NAME = "SOURCE";
 const COLUMNS = [
   "feed_title",
   "author",
