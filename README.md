@@ -74,10 +74,22 @@ The Apps Script replaces the existing row in place.
 
 ## Sheet schema
 
-| feed_title | author | author_email | source_url | page_url | title | published_at | extracted_at | error |
-|------------|--------|--------------|------------|----------|-------|--------------|--------------|-------|
+| feed_title | author | author_email | bluesky | instagram | linkedin | twitter | source_url | page_url | title | published_at | extracted_at | error |
+|------------|--------|--------------|---------|-----------|----------|---------|------------|----------|-------|--------------|--------------|-------|
 
 `source_url` (the article) is the dedup key. Failed extractions are stored as rows with `error` populated and `author=""`. Multi-author articles get all authors joined with `, ` or `; ` in the `author` column.
+
+Social columns hold `; `-joined URLs (one per profile) extracted from each article page's JSON-LD `sameAs` and byline-area anchors. Author and publisher accounts are mixed in the same field — the humans reading the sheet do the disambiguation.
+
+### Migrating an existing sheet
+
+Versions before May 2026 used a 9-column schema (no social columns). If your deployment was set up before that, you'll need to add the four new columns:
+
+1. In the SOURCE sheet, open the header row.
+2. Insert four new columns to the right of `author_email`, named (in this order): `bluesky`, `instagram`, `linkedin`, `twitter`.
+3. Existing rows will show blank in those columns; the next CLI run will populate them for newly-extracted articles.
+
+The Apps Script refuses to write if the header doesn't match (`Sheet header mismatch at column N...`). After updating the header, retry.
 
 ## Privacy
 
