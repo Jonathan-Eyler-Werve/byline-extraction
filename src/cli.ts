@@ -3,7 +3,8 @@ import "dotenv/config";
 import { Command } from "commander";
 import { loadConfig } from "./config.js";
 import { makeWebhookSheetClient, makeDryRunSheetClient, type SheetClient } from "./sheet.js";
-import { run, type ProgressEvent } from "./run.js";
+import { run } from "./run.js";
+import { renderEvent } from "./render-progress.js";
 
 const program = new Command();
 program
@@ -66,57 +67,6 @@ program
     // and counted in summary.failures. Catastrophic errors (sheet auth,
     // network to webhook) throw from run() and are caught below as exit 2.
   });
-
-function hostOf(url: string): string {
-  try {
-    return new URL(url).host;
-  } catch {
-    return url;
-  }
-}
-
-const useColor = process.stderr.isTTY && !process.env.NO_COLOR;
-const green = (s: string) => (useColor ? `\x1b[32m${s}\x1b[0m` : s);
-const red = (s: string) => (useColor ? `\x1b[31m${s}\x1b[0m` : s);
-
-function renderEvent(e: ProgressEvent): void {
-  switch (e.type) {
-    case "sheet-read-start":
-      process.stderr.write(`Reading seen URLs from sheet... `);
-      break;
-    case "sheet-read-done":
-      process.stderr.write(`${e.count} known\n`);
-      break;
-    case "feed-start": {
-      const label = e.title ? `${e.title} (${e.pageUrl})` : e.pageUrl;
-      process.stderr.write(`\nFeed ${e.index}/${e.total}: ${label}\n`);
-      break;
-    }
-    case "feed-links":
-      process.stderr.write(`Found ${e.found} links, ${e.newCount} new.\nThis feed will take ~${Math.ceil(e.newCount / 3)} seconds.\n\n`);
-      break;
-    case "feed-error":
-      process.stderr.write(`  Feed error: ${e.error}\n`);
-      break;
-    case "extract-result":
-      if (e.ok) {
-        process.stderr.write(`  [${e.index}/${e.total}] ${green("✓")} ${hostOf(e.sourceUrl)}\n`);
-      } else {
-        const reason =
-          e.error?.replace(`fetch ${e.sourceUrl} failed: `, "").trim() ||
-          e.error ||
-          "unknown";
-        process.stderr.write(`  [${e.index}/${e.total}] ${red("✗")} ${hostOf(e.sourceUrl)} — ${reason}\n`);
-      }
-      break;
-    case "persist-start":
-      process.stderr.write(`\nExtracted ${e.rowCount} row${e.rowCount === 1 ? "" : "s"}; persisting to sheet...\n`);
-      break;
-    case "persist-done":
-      process.stderr.write(`Persisted: ${e.rowCount} row${e.rowCount === 1 ? "" : "s"} appended.\n\n`);
-      break;
-  }
-}
 
 program.parseAsync().catch((err) => {
   console.error(err);
