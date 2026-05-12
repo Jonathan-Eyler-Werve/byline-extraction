@@ -17,6 +17,10 @@ const COLUMNS = [
   "feed_title",
   "author",
   "author_email",
+  "bluesky",
+  "instagram",
+  "linkedin",
+  "twitter",
   "source_url",
   "page_url",
   "title",
@@ -113,10 +117,16 @@ function rowToValues_(row) {
   // extracted_at as calendar date only (YYYY-MM-DD, UTC) so the column is
   // clusterable by day in the sheet without per-cell timestamp noise.
   const extractedAt = new Date().toISOString().slice(0, 10);
+  const socials = row.socials || {};
+  const join = function (arr) { return (arr || []).join("; "); };
   return [
     row.feedTitle || "",
     row.author || "",
     row.authorEmail || "",
+    join(socials.bluesky),
+    join(socials.instagram),
+    join(socials.linkedin),
+    join(socials.twitter),
     row.sourceUrl || "",
     row.pageUrl || "",
     row.title || "",
@@ -143,6 +153,19 @@ function ensureSheet_() {
   if (!sheet) sheet = ss.insertSheet(SHEET_NAME);
   if (sheet.getLastRow() === 0) {
     sheet.getRange(1, 1, 1, COLUMNS.length).setValues([COLUMNS]);
+    return sheet;
+  }
+  const headerWidth = Math.max(sheet.getLastColumn(), COLUMNS.length);
+  const actualHeader = sheet.getRange(1, 1, 1, headerWidth).getValues()[0];
+  for (let i = 0; i < COLUMNS.length; i++) {
+    if (actualHeader[i] !== COLUMNS[i]) {
+      throw new Error(
+        "Sheet header mismatch at column " + (i + 1) +
+        ". Expected '" + COLUMNS[i] + "', found '" + (actualHeader[i] || "") + "'. " +
+        "Update the header row in the SOURCE sheet to match the current schema, " +
+        "then retry."
+      );
+    }
   }
   return sheet;
 }
