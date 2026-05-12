@@ -2,6 +2,7 @@ import type { AppConfig, ExtractionResult, FeedConfig } from "./types.js";
 import type { SheetClient } from "./sheet.js";
 import { findLinks } from "./feeds.js";
 import { extractAuthor } from "./extract.js";
+import { classifyFetchError } from "./fetchError.js";
 
 export type RunSummary = {
   feedsScanned: number;
@@ -62,7 +63,7 @@ async function processFeed(
     emit({
       type: "feed-error",
       pageUrl: feed.pageUrl,
-      error: (err as Error).message,
+      error: classifyFetchError(err),
     });
     return { newLinks: 0, successes: 0, failures: 0 };
   }
@@ -98,7 +99,7 @@ async function processFeed(
         result,
       });
     } catch (err) {
-      const error = (err as Error).message;
+      const error = classifyFetchError(err);
       feedRows.push({
         sourceUrl,
         author: "",

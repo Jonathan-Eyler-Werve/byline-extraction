@@ -298,7 +298,7 @@ export async function extractAuthor(
     signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) {
-    throw new Error(`fetch ${sourceUrl} failed: ${res.status}`);
+    throw new Error(`${res.status} ${res.statusText}`.trim());
   }
   const html = await res.text();
   return extractAuthorFromHtml(html, sourceUrl);

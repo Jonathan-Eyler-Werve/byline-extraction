@@ -38,7 +38,7 @@ export async function findLinks(
     signal: AbortSignal.timeout(15_000),
   });
   if (!res.ok) {
-    throw new Error(`fetch ${feed.pageUrl} failed: ${res.status}`);
+    throw new Error(`${res.status} ${res.statusText}`.trim());
   }
   const html = await res.text();
   return extractLinksFromHtml(html, feed.pageUrl, feed);

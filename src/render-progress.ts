@@ -35,10 +35,7 @@ export function renderEvent(e: ProgressEvent): void {
       if (e.ok) {
         process.stderr.write(`  [${e.index}/${e.total}] ${green("✓")} ${hostOf(e.sourceUrl)}\n`);
       } else {
-        const reason =
-          e.error?.replace(`fetch ${e.sourceUrl} failed: `, "").trim() ||
-          e.error ||
-          "unknown";
+        const reason = e.error || "unknown";
         process.stderr.write(`  [${e.index}/${e.total}] ${red("✗")} ${hostOf(e.sourceUrl)} — ${reason}\n`);
       }
       break;
