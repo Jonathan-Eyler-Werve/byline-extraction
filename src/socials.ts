@@ -74,6 +74,31 @@ function collectSameAs(node: unknown): string[] {
   return [];
 }
 
+function typeMatches(node: Record<string, unknown>, want: string): boolean {
+  const t = node["@type"];
+  if (typeof t === "string") return t === want;
+  if (Array.isArray(t)) return t.some((v) => v === want);
+  return false;
+}
+
+function flattenJsonLdNodes(root: unknown): Record<string, unknown>[] {
+  // Returns the set of "candidate entities" to inspect for sameAs. Includes the
+  // top-level node(s), any @graph entries, and nested author/publisher entities.
+  const out: Record<string, unknown>[] = [];
+  const queue: unknown[] = Array.isArray(root) ? [...root] : [root];
+  while (queue.length) {
+    const cur = queue.shift();
+    if (!cur || typeof cur !== "object") continue;
+    const node = cur as Record<string, unknown>;
+    out.push(node);
+    const graph = node["@graph"];
+    if (Array.isArray(graph)) queue.push(...graph);
+    if (node.author) queue.push(...asArray(node.author));
+    if (node.publisher) queue.push(...asArray(node.publisher));
+  }
+  return out;
+}
+
 function jsonLdSocials(
   $: cheerio.CheerioAPI,
   sink: Map<SocialColumn, Set<string>>,
@@ -87,18 +112,11 @@ function jsonLdSocials(
     } catch {
       return;
     }
-    const candidates = Array.isArray(data) ? data : [data];
-    for (const candidate of candidates) {
-      if (!candidate || typeof candidate !== "object") continue;
-      const node = candidate as Record<string, unknown>;
-      const authors = asArray(node.author);
-      const publishers = asArray(node.publisher);
-      const allEntities = [...authors, ...publishers];
-      for (const entity of allEntities) {
-        for (const url of collectSameAs(entity)) {
-          const classified = classifySocial(url);
-          if (classified) sink.get(classified.column)!.add(classified.url);
-        }
+    for (const node of flattenJsonLdNodes(data)) {
+      if (!typeMatches(node, "Person") && !typeMatches(node, "Organization")) continue;
+      for (const url of collectSameAs(node)) {
+        const classified = classifySocial(url);
+        if (classified) sink.get(classified.column)!.add(classified.url);
       }
     }
   });

@@ -121,6 +121,18 @@ describe("extractSocialsFromHtml — JSON-LD sameAs", () => {
     const result = extractSocialsFromHtml(fx("article-socials-jsonld.html"));
     expect(result.twitter).toContain("https://twitter.com/bob");
   });
+
+  it("collects sameAs from sibling Person and Organization entries in @graph", () => {
+    const result = extractSocialsFromHtml(fx("article-socials-graph.html"));
+    expect(result.twitter).toEqual(
+      expect.arrayContaining([
+        "https://twitter.com/authora",
+        "https://x.com/pubaccount",
+      ]),
+    );
+    expect(result.instagram).toEqual(["https://www.instagram.com/pubaccount/"]);
+    expect(result.linkedin).toEqual(["https://www.linkedin.com/company/pubaccount/"]);
+  });
 });
 
 describe("extractSocialsFromHtml — byline-area anchor scan", () => {
