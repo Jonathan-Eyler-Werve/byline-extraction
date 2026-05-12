@@ -22,7 +22,7 @@ Extract author and organization social-media URLs from each scraped article page
 
 Four columns inserted after `author_email`, before `source_url`. Final header:
 
-| feed_title | author | author_email | **twitter** | **instagram** | **linkedin** | **bluesky** | source_url | page_url | title | published_at | extracted_at | error |
+| feed_title | author | author_email | **bluesky** | **instagram** | **linkedin** | **twitter** | source_url | page_url | title | published_at | extracted_at | error |
 
 Each column holds a `; `-separated list of full URLs (matches the existing `citation_author` join convention). Empty when nothing found. Multi-author pages and pages with both author + org accounts all get merged into the same field.
 
@@ -137,10 +137,10 @@ const COLUMNS = [
   "feed_title",
   "author",
   "author_email",
-  "twitter",       // new
+  "bluesky",       // new
   "instagram",     // new
   "linkedin",      // new
-  "bluesky",       // new
+  "twitter",       // new
   "source_url",
   "page_url",
   "title",
@@ -191,10 +191,10 @@ function rowToValues_(row) {
     row.feedTitle || "",
     row.author || "",
     row.authorEmail || "",
-    join(socials.twitter),
+    join(socials.bluesky),
     join(socials.instagram),
     join(socials.linkedin),
-    join(socials.bluesky),
+    join(socials.twitter),
     row.sourceUrl || "",
     row.pageUrl || "",
     row.title || "",
@@ -212,7 +212,7 @@ function rowToValues_(row) {
 Document in README:
 
 1. In the SOURCE sheet, open the header row.
-2. Insert four new columns to the right of `author_email`, named: `twitter`, `instagram`, `linkedin`, `bluesky`.
+2. Insert four new columns to the right of `author_email`, named (in this order): `bluesky`, `instagram`, `linkedin`, `twitter`.
 3. Existing rows will show blank in those columns. The next CLI run will populate them for newly-extracted articles.
 
 (No automated migration. The Apps Script will throw if the header doesn't match.)
