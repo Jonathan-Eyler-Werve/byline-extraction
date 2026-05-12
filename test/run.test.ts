@@ -95,6 +95,7 @@ describe("run", () => {
     expect(summary.failures).toBe(1);
     expect(appended).toHaveLength(1);
     expect(appended[0].error).toMatch(/500/);
+    expect(appended[0].error).toMatch(/^500\b/);
     expect(appended[0].author).toBe("");
   });
 
