@@ -10,12 +10,14 @@ In production, the scraper hits a news site one time per published citation. Lim
 
 1. `npm install`
 2. Open your target Google Sheet → **Extensions → Apps Script** → replace the default `Code.gs` with the contents of `apps-script/Code.gs` in this repo → **Save**. This is a manual copy/paste in the App Script UI.
-3. **Deploy → New deployment → Web app**:
+3. In the Apps Script UI, the **sheet owner** has to deploy: 
+   - **Deploy Button → New deployment → Web app**:
    - **Execute as:** Me
-   - **Who has access:** Anyone with the link (or "Anyone within `<your-domain>`" if available and you want it scoped)
+   - **Who has access:** Anyone with the link (security is handled via a token)
    - Copy the deployment URL.
 4. Copy `.env.example` → `.env` and paste the URL into `WEBHOOK_URL`.
-5. Edit `config.json` to list the Organization pages to watch and the link selector/pattern for each.
+5. Create the auth token as noted below. 
+6. Edit `config.json` to list the Organization pages to watch and the link selector/pattern for each.
 
 The Google Sheet deploy interface is wonky, so make sure you've actually saved, deployed and are on the correct version.
 
