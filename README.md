@@ -1,6 +1,6 @@
 # byline-extraction
 
-Scrapes configured pages for outbound article links, extracts the author (and email when published) from each news article, and appends rows to a Google Sheet via a Apps Script webhook.
+Scrapes configured pages for outbound article links, extracts the author (and email/social handles when published) from each news article, and appends rows to a Google Sheet via a Apps Script webhook.
 
 The goal is to improve attribution to source authors by news aggregators.
 
