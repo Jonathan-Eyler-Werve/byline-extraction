@@ -15,23 +15,23 @@ In production, the scraper hits a news site one time per published citation. Lim
    - Create a Google sheet. 
    - Open Google Sheet → **Extensions → Apps Script** 
    - In the App Script UI, replace the default `Code.gs` with the contents of `apps-script/Code.gs` in this repo.  
-   - Click the **Save Button**. 
+   - Push the **Save Button** (a disc icon)  
 
 3. Deploy the App Script
   
    3a. For a NEW App Script. In the Apps Script UI, the **sheet owner** does this: 
-   - Deploy Button → New deployment → Web app**
+   - Deploy Button → New deployment → Web app
    - Execute as: Me
-   - Who has access:** Anyone with the link (it's ok, security is handled via a token)
+   - Who has access: Anyone with the link (it's ok, security is handled via a token)
    - Copy the deployment URL
-   - Deploy button
+   - Push deploy button
 
    3b. For an EXISTING App Script, sheet owner does this:
    - Deploy Button → **Manage deployment**
    - Pencil Icon to Edit
    - Version dropdown: **New Version**
    - Description: Name the version (ex: "v2") 
-   - Deploy button
+   - Push deploy button
  
 4. Copy `.env.example` → `.env` and paste the URL into `WEBHOOK_URL`.
 
