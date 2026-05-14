@@ -1,3 +1,5 @@
+import type { SocialResult } from "./socials.js";
+
 export type ExtractionResult = {
   sourceUrl: string;
   author: string;
@@ -7,6 +9,7 @@ export type ExtractionResult = {
   title?: string;
   publishedAt?: string;
   error?: string;
+  socials?: SocialResult;
 };
 
 export type FeedConfig = {

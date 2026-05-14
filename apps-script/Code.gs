@@ -17,6 +17,10 @@ const COLUMNS = [
   "feed_title",
   "author",
   "author_email",
+  "bluesky",
+  "instagram",
+  "linkedin",
+  "twitter",
   "source_url",
   "page_url",
   "title",
@@ -27,7 +31,8 @@ const COLUMNS = [
 
 function doGet(request) {
   try {
-    if (!checkAuth_(request)) return jsonResponse_({ error: "unauthorized" });
+    const auth = checkAuth_(request);
+    if (!auth.ok) return jsonResponse_({ error: auth.error });
     const op = request.parameter.op;
     if (op === "seen") {
       const excludeErrors = request.parameter.excludeErrors === "1";
@@ -42,7 +47,8 @@ function doGet(request) {
 
 function doPost(request) {
   try {
-    if (!checkAuth_(request)) return jsonResponse_({ error: "unauthorized" });
+    const auth = checkAuth_(request);
+    if (!auth.ok) return jsonResponse_({ error: auth.error });
     const body = JSON.parse(request.postData.contents);
     if (body.op !== "append") {
       return jsonResponse_({ error: "unknown op: " + body.op });
@@ -113,10 +119,16 @@ function rowToValues_(row) {
   // extracted_at as calendar date only (YYYY-MM-DD, UTC) so the column is
   // clusterable by day in the sheet without per-cell timestamp noise.
   const extractedAt = new Date().toISOString().slice(0, 10);
+  const socials = row.socials || {};
+  const join = function (arr) { return (arr || []).join("; "); };
   return [
     row.feedTitle || "",
     row.author || "",
     row.authorEmail || "",
+    join(socials.bluesky),
+    join(socials.instagram),
+    join(socials.linkedin),
+    join(socials.twitter),
     row.sourceUrl || "",
     row.pageUrl || "",
     row.title || "",
@@ -133,8 +145,20 @@ function checkAuth_(request) {
   // enable the webhook, set TOKEN to a long random string and put the
   // same value in the caller's WEBHOOK_TOKEN env var.
   const expected = PropertiesService.getScriptProperties().getProperty("TOKEN");
-  if (!expected) return false;
-  return request && request.parameter && request.parameter.token === expected;
+  if (!expected) {
+    return {
+      ok: false,
+      error:
+        "TOKEN script property is not set. In Apps Script → Project Settings → " +
+        "Script Properties, add a property named TOKEN with a random value " +
+        "(e.g. `openssl rand -hex 16`), then put the same value in " +
+        "WEBHOOK_TOKEN in your .env. See README \"Required: shared-secret token\".",
+    };
+  }
+  if (!request || !request.parameter || request.parameter.token !== expected) {
+    return { ok: false, error: "unauthorized" };
+  }
+  return { ok: true };
 }
 
 function ensureSheet_() {
@@ -143,6 +167,19 @@ function ensureSheet_() {
   if (!sheet) sheet = ss.insertSheet(SHEET_NAME);
   if (sheet.getLastRow() === 0) {
     sheet.getRange(1, 1, 1, COLUMNS.length).setValues([COLUMNS]);
+    return sheet;
+  }
+  const headerWidth = Math.max(sheet.getLastColumn(), COLUMNS.length);
+  const actualHeader = sheet.getRange(1, 1, 1, headerWidth).getValues()[0];
+  for (let i = 0; i < COLUMNS.length; i++) {
+    if (actualHeader[i] !== COLUMNS[i]) {
+      throw new Error(
+        "Sheet header mismatch at column " + (i + 1) +
+        ". Expected '" + COLUMNS[i] + "', found '" + (actualHeader[i] || "") + "'. " +
+        "Update the header row in the SOURCE sheet to match the current schema, " +
+        "then retry."
+      );
+    }
   }
   return sheet;
 }

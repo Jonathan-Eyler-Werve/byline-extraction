@@ -6,6 +6,33 @@ import { extractAuthorFromHtml, extractAuthor } from "../src/extract.js";
 const fx = (name: string) =>
   readFileSync(join(__dirname, "fixtures", name), "utf8");
 
+describe("extractAuthorFromHtml — socials propagation", () => {
+  it("attaches a socials field when the article has author sameAs", () => {
+    const html = `<!DOCTYPE html><html><head>
+      <script type="application/ld+json">{
+        "@context": "https://schema.org",
+        "@type": "NewsArticle",
+        "author": { "@type": "Person", "name": "Ada", "sameAs": ["https://twitter.com/ada"] }
+      }</script>
+    </head><body></body></html>`;
+    const r = extractAuthorFromHtml(html, "https://example.com/a");
+    expect(r.author).toBe("Ada");
+    expect(r.socials).toEqual({ twitter: ["https://twitter.com/ada"] });
+  });
+
+  it("omits the socials field when no socials are found", () => {
+    const html = `<!DOCTYPE html><html><head>
+      <script type="application/ld+json">{
+        "@context": "https://schema.org",
+        "@type": "NewsArticle",
+        "author": { "@type": "Person", "name": "Ada" }
+      }</script>
+    </head><body></body></html>`;
+    const r = extractAuthorFromHtml(html, "https://example.com/a");
+    expect(r.socials).toBeUndefined();
+  });
+});
+
 describe("extractAuthorFromHtml — JSON-LD", () => {
   it("extracts author and email from schema.org/Article JSON-LD", () => {
     const r = extractAuthorFromHtml(

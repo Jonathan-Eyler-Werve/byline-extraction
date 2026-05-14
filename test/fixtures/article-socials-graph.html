@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html><head>
+  <title>JSON-LD @graph</title>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "NewsArticle",
+        "headline": "Article",
+        "author": { "@id": "#author" }
+      },
+      {
+        "@type": "Person",
+        "@id": "#author",
+        "name": "Author A",
+        "sameAs": ["https://twitter.com/authora"]
+      },
+      {
+        "@type": "Organization",
+        "name": "Publisher",
+        "sameAs": [
+          "https://x.com/pubaccount",
+          "https://www.instagram.com/pubaccount/",
+          "https://www.linkedin.com/company/pubaccount/"
+        ]
+      }
+    ]
+  }
+  </script>
+</head><body></body></html>
