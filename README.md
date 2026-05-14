@@ -8,23 +8,25 @@ In production, the scraper hits a news site one time per published citation. Lim
 
 ## Setup
 
-1. FOR THE CLI 
+1. Install the CLI 
    - `npm install`
 
-2. Create the App Script
+2. Copy over the App Script code
    - Create a Google sheet. 
    - Open Google Sheet → **Extensions → Apps Script** 
    - In the App Script UI, replace the default `Code.gs` with the contents of `apps-script/Code.gs` in this repo.  
    - Click the **Save Button**. 
 
-3. Deploy the App Script. In the Apps Script UI, the **sheet owner** has to Deploy the app script: 
-   - **Deploy Button → New deployment → Web app**:
-   - **Execute as:** Me
-   - **Who has access:** Anyone with the link (security is handled via a token)
+3. Deploy the App Script
+  
+   3a. For a NEW App Script. In the Apps Script UI, the **sheet owner** does this: 
+   - Deploy Button → New deployment → Web app**
+   - Execute as: Me
+   - Who has access:** Anyone with the link (it's ok, security is handled via a token)
    - Copy the deployment URL
    - Deploy button
 
-3a. To redeploy an existing App Script, sheet owner does this process:
+   3b. For an EXISTING App Script, sheet owner does this:
    - Deploy Button → **Manage deployment**
    - Pencil Icon to Edit
    - Version dropdown: **New Version**
