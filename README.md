@@ -8,11 +8,9 @@ In production, the scraper hits a news site one time per published citation. Lim
 
 ## Setup
 
-1. Install the CLI 
-   - `npm install`
+1. Create a Google sheet. 
 
 2. Copy over the App Script code
-   - Create a Google sheet. 
    - Open Google Sheet → **Extensions → Apps Script** 
    - In the App Script UI, replace the default `Code.gs` with the contents of `apps-script/Code.gs` in this repo.  
    - Push the **Save Button** (a disc icon)  
@@ -33,11 +31,16 @@ In production, the scraper hits a news site one time per published citation. Lim
    - Description: Name the version (ex: "v2") 
    - Push deploy button
  
-4. Copy `.env.example` → `.env` and paste the URL into `WEBHOOK_URL`.
+4. Install the CLI 
+   - `npm install` (requires npm) 
 
-5. Create the auth token as noted below. 
+5. Rename `.env.example` to `.env` and paste the URL into `WEBHOOK_URL`.
 
-6. Edit `config.json` to list the Organization pages to watch and the link selector/pattern for each.
+6. Create the auth token as noted below. Add this to `.env`.
+
+7. Edit `config.json`. This is where you tell the scraper what to scrape.  
+   - add URLS of page(s) to watch  
+   - add link selector/pattern for each. You want to select content, not nav, using CSS classes (ex `.content a`). 
 
 The Google Sheet deploy interface is wonky, so make sure you've actually saved, deployed and are on the correct version.
 
