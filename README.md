@@ -36,7 +36,7 @@ In production, the scraper hits a news site one time per published citation. Lim
 
 5. Rename `.env.example` to `.env` and paste the URL into `WEBHOOK_URL`.
 
-6. Create the auth token as noted below. Add this to both `.env` and the App Script config.
+6. Create the auth token as noted below. Add this in two places: `.env` and the App Script config.
 
 7. Edit `config.json`. This is where you tell the scraper what to scrape.  
    - add URLS of page(s) to watch  
@@ -44,7 +44,7 @@ In production, the scraper hits a news site one time per published citation. Lim
 
 The Google Sheet deploy interface is wonky, so make sure you've actually saved, deployed and are on the correct version.
 
-### Required: shared-secret token
+### How to create an auth token
 
 Every request must include `?token=<value>` matching the `TOKEN` Script Property. You'll set this in .env locally and within the Google Sheet.
 
