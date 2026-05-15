@@ -108,13 +108,7 @@ Social columns hold `; `-joined URLs (one per profile) extracted from each artic
 
 ### Migrating an existing sheet
 
-Versions before May 2026 used a 9-column schema (no social columns). If your deployment was set up before that, you'll need to add the four new columns:
-
-1. In the SOURCE sheet, open the header row.
-2. Insert four new columns to the right of `author_email`, named (in this order): `bluesky`, `instagram`, `linkedin`, `twitter`.
-3. Existing rows will show blank in those columns; the next CLI run will populate them for newly-extracted articles.
-
-The Apps Script refuses to write if the header doesn't match (`Sheet header mismatch at column N...`). After updating the header, retry.
+To update to schema-breaking versions, easiest method is to delete the sheet and run the scrape again. 
 
 ## Privacy
 
