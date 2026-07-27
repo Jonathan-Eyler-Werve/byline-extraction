@@ -23,7 +23,14 @@ jobs:
     permissions:
       contents: read
     steps:
+      # Scheduled runs execute this workflow file from main (GitHub only
+      # fires cron from the default branch), but the deployment config
+      # lives on the `unbreaking` branch — check that out instead. Forks
+      # reusing this workflow should point ref at their own config branch
+      # or drop it to use main.
       - uses: actions/checkout@v4
+        with:
+          ref: unbreaking
 
       - uses: actions/setup-node@v4
         with:

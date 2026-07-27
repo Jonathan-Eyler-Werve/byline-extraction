@@ -1,54 +1,15 @@
 {
+  "_note": "YOUR CONTENT HERE — replace the example feeds below with the pages you want to scrape. Each feed needs a pageUrl plus either a linkSelector (CSS selector for article links) or a linkPattern (regex applied to link URLs). The title becomes the feed_title column in the sheet.",
   "feeds": [
     {
-      "title": "Immigration",
-      "pageUrl": "https://unbreaking.org/issues/immigration/",
-      "linkSelector": ".table-timeline a, .footnotes-item a"
+      "title": "Example (CSS selector)",
+      "pageUrl": "https://example.com/news/",
+      "linkSelector": ".content a"
     },
     {
-      "title": "Workforce",
-      "pageUrl": "https://unbreaking.org/issues/equality-at-work-decimating-the-federal-workforce/",
-      "linkSelector": ".table-timeline a, .footnotes-item a"
-    },
-    {
-      "title": "Archives",
-      "pageUrl": "https://unbreaking.org/issues/archives-history/",
-      "linkSelector": ".table-timeline a, .footnotes-item a"
-    },
-    {
-      "title": "Data",
-      "pageUrl": "https://unbreaking.org/issues/data-security/",
-      "linkSelector": ".table-timeline a, .footnotes-item a"
-    },
-    {
-      "title": "Disease",
-      "pageUrl": "https://unbreaking.org/issues/infectious-disease-control/",
-      "linkSelector": ".table-timeline a, .footnotes-item a"
-    },
-    {
-      "title": "Transgender",
-      "pageUrl": "https://unbreaking.org/issues/transgender-healthcare/",
-      "linkSelector": ".table-timeline a, .footnotes-item a"
-    },
-    {
-      "title": "Food",
-      "pageUrl": "https://unbreaking.org/issues/food-safety/",
-      "linkSelector": ".table-timeline a, .footnotes-item a"
-    },
-    {
-      "title": "Medicaid",
-      "pageUrl": "https://unbreaking.org/issues/medicaid/",
-      "linkSelector": ".table-timeline a, .footnotes-item a"
-    },
-    {
-      "title": "Research",
-      "pageUrl": "https://unbreaking.org/issues/medical-research-funding/",
-      "linkSelector": ".table-timeline a, .footnotes-item a"
-    },
-    {
-      "title": "Postal",
-      "pageUrl": "https://unbreaking.org/issues/postal-service/",
-      "linkSelector": ".table-timeline a, .footnotes-item a"
+      "title": "Example (URL pattern)",
+      "pageUrl": "https://example.com/topics/widgets/",
+      "linkPattern": "https://example\\.com/articles/.+"
     }
   ]
 }

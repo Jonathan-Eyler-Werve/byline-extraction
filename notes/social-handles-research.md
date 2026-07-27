@@ -6,7 +6,7 @@ Purpose: Decide whether news article pages reliably expose author social handles
 
 ## Method
 
-- Pulled a sample of article URLs from the `unbreaking.org` `/issues/immigration/` and `/issues/medicaid/` pages.
+- Pulled a sample of article URLs from two of the configured feed index pages.
 - Curled 13 articles with the project's polite User-Agent. Three returned 403 (`19thnews`, `georgiarecorder`, `coloradonewsline`, `documentedny` — bot-blocked even with a polite UA, consistent with `enhancement-ideas.md`).
 - 13 successful fetches across wire, nonprofit, magazine, indie investigative, local-indie, and community-paper categories.
 - For each: scanned for social URLs (twitter/x/bsky/linkedin/threads/instagram), inspected byline/author-bio markup, inspected JSON-LD Person entities for `sameAs`.
