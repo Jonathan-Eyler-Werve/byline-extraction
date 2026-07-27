@@ -132,6 +132,8 @@ npm test
 2. The workflow defaults to **14:13 UTC daily**. Edit the `cron:` line to change cadence.
 3. A "Run workflow" button on the Actions tab triggers it manually for testing.
 
+Note: GitHub only fires cron from the default branch, but this repo's workflow checks out the `unbreaking` branch, where the live deployment config lives (main's `config.json` is a placeholder). If you fork this, point the checkout `ref` in `run.yml` at your own config branch, or remove it to run from main. If you keep a config branch, merge main into it after code changes — the cron runs that branch's code.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
