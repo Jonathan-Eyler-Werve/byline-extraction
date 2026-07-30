@@ -10,7 +10,7 @@
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
-    "start": "node --loader tsx ./src/cli.ts",
+    "start": "node --import tsx ./src/cli.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -25,6 +25,6 @@
     "vitest": "^4.1.5"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=20.6.0"
   }
 }
